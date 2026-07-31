@@ -1,0 +1,216 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/customer_provider.dart';
+import '../../models/customer.dart';
+
+class CustomersScreen extends StatelessWidget {
+  const CustomersScreen({super.key});
+
+  void _showCustomerDialog(BuildContext context, {Customer? customer}) {
+    final nameController = TextEditingController(text: customer?.customerName ?? '');
+    final phoneController = TextEditingController(text: customer?.phone ?? '');
+    final addressController = TextEditingController(text: customer?.address ?? '');
+    final cityController = TextEditingController(text: customer?.city ?? '');
+    final gstController = TextEditingController(text: customer?.gstNumber ?? '');
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(customer == null ? 'Add Customer' : 'Edit Customer'),
+        content: Form(
+          key: formKey,
+          child: Container(
+            width: 450,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Customer Name *'),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Customer Name is required' : null,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: phoneController,
+                        decoration: const InputDecoration(labelText: 'Phone Number'),
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: gstController,
+                        decoration: const InputDecoration(labelText: 'GST Number (Optional)'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: addressController,
+                  decoration: const InputDecoration(labelText: 'Address'),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: cityController,
+                  decoration: const InputDecoration(labelText: 'City'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (formKey.currentState!.validate()) {
+                final newCustomer = Customer(
+                  customerId: customer?.customerId,
+                  customerName: nameController.text.trim(),
+                  phone: phoneController.text.trim(),
+                  address: addressController.text.trim(),
+                  city: cityController.text.trim(),
+                  gstNumber: gstController.text.trim(),
+                );
+
+                final provider = context.read<CustomerProvider>();
+                if (customer == null) {
+                  await provider.addCustomer(newCustomer);
+                } else {
+                  await provider.updateCustomer(newCustomer);
+                }
+                if (context.mounted) Navigator.pop(dialogContext);
+              }
+            },
+            child: Text(customer == null ? 'Add Customer' : 'Save Changes'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, Customer customer) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Customer'),
+        content: Text('Are you sure you want to delete "${customer.customerName}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              await context.read<CustomerProvider>().deleteCustomer(customer.customerId!);
+              if (context.mounted) Navigator.pop(dialogContext);
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Customers Directory'),
+        actions: [
+          ElevatedButton.icon(
+            icon: const Icon(Icons.person_add),
+            label: const Text('Add Customer'),
+            onPressed: () => _showCustomerDialog(context),
+          ),
+          const SizedBox(width: 16),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          children: [
+            // Search Bar
+            TextField(
+              decoration: InputDecoration(
+                hintText: 'Search customers by name, phone, or city...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+              onChanged: (val) => context.read<CustomerProvider>().setSearchQuery(val),
+            ),
+            const SizedBox(height: 24),
+            // Customers DataTable
+            Expanded(
+              child: Consumer<CustomerProvider>(
+                builder: (context, provider, child) {
+                  if (provider.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final customers = provider.filteredCustomers;
+                  if (customers.isEmpty) {
+                    return const Center(child: Text('No customers found.'));
+                  }
+
+                  return Card(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.vertical,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: DataTable(
+                          columns: const [
+                            DataColumn(label: Text('Customer Name')),
+                            DataColumn(label: Text('Phone')),
+                            DataColumn(label: Text('Address')),
+                            DataColumn(label: Text('City')),
+                            DataColumn(label: Text('GST Number')),
+                            DataColumn(label: Text('Actions')),
+                          ],
+                          rows: customers.map((c) {
+                            return DataRow(
+                              cells: [
+                                DataCell(Text(c.customerName, style: const TextStyle(fontWeight: FontWeight.bold))),
+                                DataCell(Text(c.phone != null && c.phone!.isNotEmpty ? c.phone! : '-')),
+                                DataCell(Text(c.address != null && c.address!.isNotEmpty ? c.address! : '-')),
+                                DataCell(Text(c.city != null && c.city!.isNotEmpty ? c.city! : '-')),
+                                DataCell(Text(c.gstNumber != null && c.gstNumber!.isNotEmpty ? c.gstNumber! : '-')),
+                                DataCell(
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit, color: Colors.blue),
+                                        onPressed: () => _showCustomerDialog(context, customer: c),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete, color: Colors.red),
+                                        onPressed: () => _confirmDelete(context, c),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
