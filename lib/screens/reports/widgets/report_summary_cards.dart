@@ -126,21 +126,37 @@ class ReportSummaryCards extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < 1000) {
-          return SizedBox(
-            height: 96,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: cards.length,
-              itemBuilder: (context, index) => SizedBox(
-                width: 175,
-                child: _SummaryCard(data: cards[index]),
+        if (cards.length == 6 && constraints.maxWidth < 1350) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 76,
+                child: Row(
+                  children: [
+                    Expanded(child: _SummaryCard(data: cards[0])),
+                    Expanded(child: _SummaryCard(data: cards[1])),
+                    Expanded(child: _SummaryCard(data: cards[2])),
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 76,
+                child: Row(
+                  children: [
+                    Expanded(child: _SummaryCard(data: cards[3])),
+                    Expanded(child: _SummaryCard(data: cards[4])),
+                    Expanded(child: _SummaryCard(data: cards[5])),
+                  ],
+                ),
+              ),
+            ],
           );
         }
+
         return SizedBox(
-          height: 96,
+          height: 90,
           child: Row(
             children: cards.map((card) => Expanded(
               child: _SummaryCard(data: card),

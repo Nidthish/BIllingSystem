@@ -163,46 +163,53 @@ class CustomersScreen extends StatelessWidget {
                   }
 
                   return Card(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.vertical,
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: DataTable(
-                          columns: const [
-                            DataColumn(label: Text('Customer Name')),
-                            DataColumn(label: Text('Phone')),
-                            DataColumn(label: Text('Address')),
-                            DataColumn(label: Text('City')),
-                            DataColumn(label: Text('GST Number')),
-                            DataColumn(label: Text('Actions')),
-                          ],
-                          rows: customers.map((c) {
-                            return DataRow(
-                              cells: [
-                                DataCell(Text(c.customerName, style: const TextStyle(fontWeight: FontWeight.bold))),
-                                DataCell(Text(c.phone != null && c.phone!.isNotEmpty ? c.phone! : '-')),
-                                DataCell(Text(c.address != null && c.address!.isNotEmpty ? c.address! : '-')),
-                                DataCell(Text(c.city != null && c.city!.isNotEmpty ? c.city! : '-')),
-                                DataCell(Text(c.gstNumber != null && c.gstNumber!.isNotEmpty ? c.gstNumber! : '-')),
-                                DataCell(
-                                  Row(
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.edit, color: Colors.blue),
-                                        onPressed: () => _showCustomerDialog(context, customer: c),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete, color: Colors.red),
-                                        onPressed: () => _confirmDelete(context, c),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.vertical,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                              child: DataTable(
+                                columns: const [
+                                  DataColumn(label: Text('Customer Name')),
+                                  DataColumn(label: Text('Phone')),
+                                  DataColumn(label: Text('Address')),
+                                  DataColumn(label: Text('City')),
+                                  DataColumn(label: Text('GST Number')),
+                                  DataColumn(label: Text('Actions')),
+                                ],
+                                rows: customers.map((c) {
+                                  return DataRow(
+                                    cells: [
+                                      DataCell(Text(c.customerName, style: const TextStyle(fontWeight: FontWeight.bold))),
+                                      DataCell(Text(c.phone != null && c.phone!.isNotEmpty ? c.phone! : '-')),
+                                      DataCell(Text(c.address != null && c.address!.isNotEmpty ? c.address! : '-')),
+                                      DataCell(Text(c.city != null && c.city!.isNotEmpty ? c.city! : '-')),
+                                      DataCell(Text(c.gstNumber != null && c.gstNumber!.isNotEmpty ? c.gstNumber! : '-')),
+                                      DataCell(
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.edit, color: Colors.blue),
+                                              onPressed: () => _showCustomerDialog(context, customer: c),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(Icons.delete, color: Colors.red),
+                                              onPressed: () => _confirmDelete(context, c),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ],
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
-                        ),
-                      ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   );
                 },

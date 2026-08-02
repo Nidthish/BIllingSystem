@@ -9,7 +9,10 @@ import '../../utils/invoice_generator.dart';
 import '../../utils/reports_pdf_generator.dart';
 import '../../utils/reports_excel_generator.dart';
 import '../../models/sale.dart';
+import '../../models/sale_item.dart';
+import '../../models/settings.dart';
 import '../../models/report_filter_model.dart';
+import '../../database/database_helper.dart';
 import 'widgets/invoice_table.dart';
 import 'widgets/report_summary_cards.dart';
 import 'widgets/report_loading.dart';
@@ -42,20 +45,41 @@ class _InvoiceReportsTabState extends State<InvoiceReportsTab> {
   }
 
   Future<void> _reprintInvoice(Sale sale) async {
-    final provider = context.read<InvoiceReportsProvider>();
-    final settings = context.read<SettingsProvider>().settings;
-    final products = provider.allProducts;
-    final items = provider.getItemsForSale(sale.saleId!);
-    if (settings == null) return;
-    await InvoiceGenerator.generateAndPrintInvoice(
-      sale: sale,
-      items: items,
-      customerName: sale.customerName ?? 'Walk-in Customer',
-      customerPhone: '',
-      customerAddress: '',
-      settings: settings,
-      allProducts: products,
-    );
+    try {
+      final provider = context.read<InvoiceReportsProvider>();
+      final settings = context.read<SettingsProvider>().settings ?? Settings(
+        shopName: 'SK Masala',
+        address: '15 Market Street, Coimbatore, TN 641001',
+        phone: '0422-2345678',
+        gstNumber: '33ABCDE1234F1Z5',
+        invoicePrefix: 'INV',
+      );
+
+      List<SaleItem> items = sale.saleId != null ? provider.getItemsForSale(sale.saleId!) : [];
+      if (items.isEmpty && sale.saleId != null) {
+        items = await DatabaseHelper.instance.getSaleItems(sale.saleId!);
+      }
+
+      final products = provider.allProducts.isNotEmpty
+          ? provider.allProducts
+          : await DatabaseHelper.instance.getProducts();
+
+      await InvoiceGenerator.generateAndPrintInvoice(
+        sale: sale,
+        items: items,
+        customerName: sale.customerName ?? 'Walk-in Customer',
+        customerPhone: '',
+        customerAddress: '',
+        settings: settings,
+        allProducts: products,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to print invoice: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   void _viewInvoice(Sale sale) {

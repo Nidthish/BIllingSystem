@@ -64,6 +64,9 @@ class ReportsScreen extends StatelessWidget {
                 indicatorColor: const Color(0xFF00875A),
                 indicatorWeight: 3,
                 indicatorSize: TabBarIndicatorSize.label,
+                overlayColor: WidgetStateProperty.all(Colors.transparent),
+                dividerColor: Colors.transparent,
+                splashFactory: NoSplash.splashFactory,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 tabs: const [
                   Tab(

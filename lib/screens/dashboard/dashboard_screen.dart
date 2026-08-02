@@ -123,25 +123,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
               else
                 Flexible(
                   child: SingleChildScrollView(
-                    child: DataTable(
-                      headingRowHeight: 40,
-                      dataRowMinHeight: 44,
-                      columns: const [
-                        DataColumn(label: Text('Code / ID')),
-                        DataColumn(label: Text('Product Name')),
-                        DataColumn(label: Text('Current Stock')),
-                        DataColumn(label: Text('Min Stock')),
-                      ],
-                      rows: lowStockProducts.map((p) {
-                        return DataRow(
-                          cells: [
-                            DataCell(Text(p.barcode ?? '#${p.productId ?? '-'}', style: const TextStyle(fontWeight: FontWeight.w600))),
-                            DataCell(Text(p.productName, style: const TextStyle(fontWeight: FontWeight.bold))),
-                            DataCell(Text('${p.stock} ${p.unit ?? 'pcs'}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
-                            DataCell(Text('${p.minimumStock}')),
-                          ],
-                        );
-                      }).toList(),
+                    scrollDirection: Axis.vertical,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: DataTable(
+                        headingRowHeight: 40,
+                        dataRowMinHeight: 44,
+                        columns: const [
+                          DataColumn(label: Text('Code / ID')),
+                          DataColumn(label: Text('Product Name')),
+                          DataColumn(label: Text('Current Stock')),
+                          DataColumn(label: Text('Min Stock')),
+                        ],
+                        rows: lowStockProducts.map((p) {
+                          return DataRow(
+                            cells: [
+                              DataCell(Text(p.barcode ?? '#${p.productId ?? '-'}', style: const TextStyle(fontWeight: FontWeight.w600))),
+                              DataCell(Text(p.productName, style: const TextStyle(fontWeight: FontWeight.bold))),
+                              DataCell(Text('${p.stock} ${p.unit ?? 'pcs'}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
+                              DataCell(Text('${p.minimumStock}')),
+                            ],
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ),
                 ),

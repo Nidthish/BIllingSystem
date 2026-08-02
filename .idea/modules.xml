@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/BIllingSystem.iml" filepath="$PROJECT_DIR$/.idea/BIllingSystem.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/SMARTBILL.iml" filepath="$PROJECT_DIR$/.idea/SMARTBILL.iml" />
     </modules>
   </component>
 </project>

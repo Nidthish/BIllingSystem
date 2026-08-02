@@ -5,6 +5,7 @@ import '../../providers/category_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../models/product.dart';
 import '../../models/category.dart';
+import '../../models/settings.dart';
 import '../../utils/reports_pdf_generator.dart';
 
 class ProductsScreen extends StatelessWidget {
@@ -254,10 +255,16 @@ class ProductsScreen extends StatelessWidget {
                   side: const BorderSide(color: Color(0xFF00875A)),
                 ),
                 onPressed: () async {
-                  final settings = context.read<SettingsProvider>().settings;
-                  if (settings == null) {
+                  final settings = context.read<SettingsProvider>().settings ?? Settings(
+                    shopName: 'SK Masala',
+                    address: '15 Market Street, Coimbatore, TN 641001',
+                    phone: '0422-2345678',
+                    gstNumber: '33ABCDE1234F1Z5',
+                    invoicePrefix: 'INV',
+                  );
+                  if (prodProv.products.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Settings not loaded. Please configure shop settings first.'), backgroundColor: Colors.red),
+                      const SnackBar(content: Text('No products available to print.'), backgroundColor: Colors.orange),
                     );
                     return;
                   }
@@ -291,10 +298,16 @@ class ProductsScreen extends StatelessWidget {
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () async {
-                  final settings = context.read<SettingsProvider>().settings;
-                  if (settings == null) {
+                  final settings = context.read<SettingsProvider>().settings ?? Settings(
+                    shopName: 'SK Masala',
+                    address: '15 Market Street, Coimbatore, TN 641001',
+                    phone: '0422-2345678',
+                    gstNumber: '33ABCDE1234F1Z5',
+                    invoicePrefix: 'INV',
+                  );
+                  if (prodProv.products.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Settings not loaded. Please configure shop settings first.'), backgroundColor: Colors.red),
+                      const SnackBar(content: Text('No products available to export.'), backgroundColor: Colors.orange),
                     );
                     return;
                   }
@@ -343,41 +356,54 @@ class ProductsScreen extends StatelessWidget {
         child: Column(
           children: [
             // Top Toolbar: Search & Category Filter
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Search products by name or barcode...',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    ),
-                    onChanged: (val) => context.read<ProductProvider>().setSearchQuery(val),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isNarrow = constraints.maxWidth < 600;
+                final searchField = TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Search products by name or barcode...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  flex: 1,
-                  child: DropdownButtonFormField<int?>(
-                    initialValue: context.watch<ProductProvider>().selectedCategoryId,
-                    decoration: InputDecoration(
-                      labelText: 'Filter by Category',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    ),
-                    items: [
-                      const DropdownMenuItem<int?>(value: null, child: Text('All Categories')),
-                      ...categories.map((c) => DropdownMenuItem<int?>(
-                        value: c.categoryId,
-                        child: Text(c.categoryName),
-                      )),
+                  onChanged: (val) => context.read<ProductProvider>().setSearchQuery(val),
+                );
+
+                final categoryDropdown = DropdownButtonFormField<int?>(
+                  initialValue: context.watch<ProductProvider>().selectedCategoryId,
+                  decoration: InputDecoration(
+                    labelText: 'Filter by Category',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
+                  items: [
+                    const DropdownMenuItem<int?>(value: null, child: Text('All Categories')),
+                    ...categories.map((c) => DropdownMenuItem<int?>(
+                      value: c.categoryId,
+                      child: Text(c.categoryName),
+                    )),
+                  ],
+                  onChanged: (val) => context.read<ProductProvider>().setSelectedCategory(val),
+                );
+
+                if (isNarrow) {
+                  return Column(
+                    children: [
+                      searchField,
+                      const SizedBox(height: 12),
+                      categoryDropdown,
                     ],
-                    onChanged: (val) => context.read<ProductProvider>().setSelectedCategory(val),
-                  ),
-                ),
-              ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(flex: 2, child: searchField),
+                    const SizedBox(width: 16),
+                    Expanded(flex: 1, child: categoryDropdown),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 24),
             // Product List Data Table
@@ -394,74 +420,81 @@ class ProductsScreen extends StatelessWidget {
                   }
 
                   return Card(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.vertical,
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: DataTable(
-                          columns: const [
-                            DataColumn(label: Text('Code / ID')),
-                            DataColumn(label: Text('Product Name')),
-                            DataColumn(label: Text('Category')),
-                            DataColumn(label: Text('Stock')),
-                            DataColumn(label: Text('Min Stock')),
-                            DataColumn(label: Text('Buy Price')),
-                            DataColumn(label: Text('Sell Price')),
-                            DataColumn(label: Text('Actions')),
-                          ],
-                          rows: products.map((product) {
-                            final isLowStock = product.stock <= product.minimumStock;
-                            final categoryName = categories
-                                .firstWhere(
-                                  (c) => c.categoryId == product.categoryId,
-                                  orElse: () => Category(categoryName: 'Unassigned'),
-                                )
-                                .categoryName;
-                            final codeStr = (product.barcode != null && product.barcode!.isNotEmpty)
-                                ? product.barcode!
-                                : '#${product.productId ?? '-'}';
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.vertical,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                              child: DataTable(
+                                columns: const [
+                                  DataColumn(label: Text('Code / ID')),
+                                  DataColumn(label: Text('Product Name')),
+                                  DataColumn(label: Text('Category')),
+                                  DataColumn(label: Text('Stock')),
+                                  DataColumn(label: Text('Min Stock')),
+                                  DataColumn(label: Text('Buy Price')),
+                                  DataColumn(label: Text('Sell Price')),
+                                  DataColumn(label: Text('Actions')),
+                                ],
+                                rows: products.map((product) {
+                                  final isLowStock = product.stock <= product.minimumStock;
+                                  final categoryName = categories
+                                      .firstWhere(
+                                        (c) => c.categoryId == product.categoryId,
+                                        orElse: () => Category(categoryName: 'Unassigned'),
+                                      )
+                                      .categoryName;
+                                  final codeStr = (product.barcode != null && product.barcode!.isNotEmpty)
+                                      ? product.barcode!
+                                      : '#${product.productId ?? '-'}';
 
-                            return DataRow(
-                              cells: [
-                                DataCell(Text(codeStr, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF00875A)))),
-                                DataCell(Text(product.productName, style: const TextStyle(fontWeight: FontWeight.bold))),
-                                DataCell(Chip(label: Text(categoryName, style: const TextStyle(fontSize: 12)))),
-                                DataCell(
-                                  Row(
-                                    children: [
-                                      Text('${product.stock} ${product.unit ?? 'pcs'}'),
-                                      if (isLowStock) ...[
-                                        const SizedBox(width: 6),
-                                        const Tooltip(
-                                          message: 'Low Stock Alert!',
-                                          child: Icon(Icons.warning, color: Colors.orange, size: 18),
+                                  return DataRow(
+                                    cells: [
+                                      DataCell(Text(codeStr, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF00875A)))),
+                                      DataCell(Text(product.productName, style: const TextStyle(fontWeight: FontWeight.bold))),
+                                      DataCell(Chip(label: Text(categoryName, style: const TextStyle(fontSize: 12)))),
+                                      DataCell(
+                                        Row(
+                                          children: [
+                                            Text('${product.stock} ${product.unit ?? 'pcs'}'),
+                                            if (isLowStock) ...[
+                                              const SizedBox(width: 6),
+                                              const Tooltip(
+                                                message: 'Low Stock Alert!',
+                                                child: Icon(Icons.warning, color: Colors.orange, size: 18),
+                                              ),
+                                            ],
+                                          ],
                                         ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                DataCell(Text('${product.minimumStock}')),
-                                DataCell(Text('₹${product.purchasePrice.toStringAsFixed(2)}')),
-                                DataCell(Text('₹${product.sellingPrice.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold))),
-                                DataCell(
-                                  Row(
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.edit, color: Colors.blue),
-                                        onPressed: () => _showProductDialog(context, product: product),
                                       ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete, color: Colors.red),
-                                        onPressed: () => _confirmDelete(context, product),
+                                      DataCell(Text('${product.minimumStock}')),
+                                      DataCell(Text('₹${product.purchasePrice.toStringAsFixed(2)}')),
+                                      DataCell(Text('₹${product.sellingPrice.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold))),
+                                      DataCell(
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.edit, color: Colors.blue),
+                                              onPressed: () => _showProductDialog(context, product: product),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(Icons.delete, color: Colors.red),
+                                              onPressed: () => _confirmDelete(context, product),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ],
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
-                        ),
-                      ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   );
                 },

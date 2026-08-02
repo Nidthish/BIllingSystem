@@ -359,8 +359,18 @@ class ReportsPdfGenerator {
     // Build category name lookup
     final catMap = <int, String>{};
     for (final c in categories) {
-      if (c.categoryId != null) catMap[c.categoryId as int] = c.categoryName as String;
+      final id = (c.categoryId as num?)?.toInt();
+      final name = c.categoryName as String?;
+      if (id != null && name != null) {
+        catMap[id] = name;
+      }
     }
+
+    final lowStockCount = products.where((p) {
+      final stk = (p.stock as num?)?.toInt() ?? 0;
+      final minStk = (p.minimumStock as num?)?.toInt() ?? 0;
+      return stk <= minStk;
+    }).length;
 
     final colWidths = <int, pw.TableColumnWidth>{
       0: const pw.FixedColumnWidth(25),   // #
@@ -395,7 +405,7 @@ class ReportsPdfGenerator {
               children: [
                 pw.Text('Total Products: ${products.length}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: _primaryColor)),
                 pw.SizedBox(width: 30),
-                pw.Text('Low Stock Items: ${products.where((p) => (p.stock as int) <= (p.minimumStock as int)).length}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: _accentColor)),
+                pw.Text('Low Stock Items: $lowStockCount', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: _accentColor)),
                 pw.SizedBox(width: 30),
                 pw.Text('Generated: ${DateFormat('dd MMM yyyy hh:mm a').format(now)}', style: const pw.TextStyle(fontSize: 9, color: _textLight)),
               ],
@@ -427,22 +437,31 @@ class ReportsPdfGenerator {
               ...products.asMap().entries.map((entry) {
                 final i = entry.key;
                 final p = entry.value;
-                final isLow = (p.stock as int) <= (p.minimumStock as int);
+                final stk = (p.stock as num?)?.toInt() ?? 0;
+                final minStk = (p.minimumStock as num?)?.toInt() ?? 0;
+                final isLow = stk <= minStk;
                 final bg = isLow ? const PdfColor.fromInt(0xFFFFF3CD) : (i.isEven ? null : _rowAlt);
-                final codeStr = (p.barcode != null && (p.barcode as String).isNotEmpty)
-                    ? p.barcode as String
+                final barcode = p.barcode as String?;
+                final codeStr = (barcode != null && barcode.isNotEmpty)
+                    ? barcode
                     : '#${p.productId ?? '-'}';
-                final catName = catMap[p.categoryId] ?? 'Unassigned';
+                final catId = (p.categoryId as num?)?.toInt();
+                final catName = catId != null ? (catMap[catId] ?? 'Unassigned') : 'Unassigned';
+                final prodName = (p.productName as String?) ?? 'Unnamed';
+                final unitStr = (p.unit as String?) ?? 'pcs';
+                final purchasePrice = (p.purchasePrice as num?)?.toDouble() ?? 0.0;
+                final sellingPrice = (p.sellingPrice as num?)?.toDouble() ?? 0.0;
+
                 return pw.TableRow(children: [
                   _cell('${i + 1}', align: pw.TextAlign.center, bg: bg, fontSize: 7),
                   _cell(codeStr, bg: bg, fontSize: 7, bold: true),
-                  _cell(p.productName as String, bg: bg, fontSize: 7, bold: true),
+                  _cell(prodName, bg: bg, fontSize: 7, bold: true),
                   _cell(catName, bg: bg, fontSize: 7),
-                  _cell(p.unit as String? ?? 'pcs', align: pw.TextAlign.center, bg: bg, fontSize: 7),
-                  _cell('${p.stock}', align: pw.TextAlign.right, bg: bg, fontSize: 7, color: isLow ? PdfColors.red700 : null, bold: isLow),
-                  _cell('${p.minimumStock}', align: pw.TextAlign.right, bg: bg, fontSize: 7),
-                  _cell('Rs. ${_numFmt.format(p.purchasePrice)}', align: pw.TextAlign.right, bg: bg, fontSize: 7),
-                  _cell('Rs. ${_numFmt.format(p.sellingPrice)}', align: pw.TextAlign.right, bg: bg, fontSize: 7, bold: true),
+                  _cell(unitStr, align: pw.TextAlign.center, bg: bg, fontSize: 7),
+                  _cell('$stk', align: pw.TextAlign.right, bg: bg, fontSize: 7, color: isLow ? PdfColors.red700 : null, bold: isLow),
+                  _cell('$minStk', align: pw.TextAlign.right, bg: bg, fontSize: 7),
+                  _cell('Rs. ${_numFmt.format(purchasePrice)}', align: pw.TextAlign.right, bg: bg, fontSize: 7),
+                  _cell('Rs. ${_numFmt.format(sellingPrice)}', align: pw.TextAlign.right, bg: bg, fontSize: 7, bold: true),
                   _cell(isLow ? 'LOW' : 'OK', align: pw.TextAlign.center, bg: bg, fontSize: 7, bold: true, color: isLow ? PdfColors.red700 : PdfColors.green800),
                 ]);
               }),

@@ -50,59 +50,74 @@ class _AnalysisTableState extends State<AnalysisTable> {
             elevation: 2,
             clipBehavior: Clip.antiAlias,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Column(
-              children: [
-                // Sticky header
-                _AnalysisHeader(columns: columns, tableWidth: tableWidth),
-                // Scrollable body
-                Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.vertical,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: SizedBox(
-                        width: tableWidth,
-                        child: Column(
-                          children: widget.rows.asMap().entries.map((entry) {
-                            final i = entry.key;
-                            final row = entry.value;
-                            final isHovered = _hoveredIndex == i;
-                            final isEven = i.isEven;
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final double effectiveWidth = tableWidth < constraints.maxWidth ? constraints.maxWidth : tableWidth;
 
-                            final rowBg = isHovered
-                                ? theme.colorScheme.primary.withValues(alpha: 0.1)
-                                : isEven
-                                    ? (isDark ? const Color(0xFF13281E) : Colors.white)
-                                    : (isDark ? const Color(0xFF1A3528) : const Color(0xFFF0FDF4));
+                // Adjust 'group' (Product / Category name) column width dynamically if expanding
+                final double extraWidth = effectiveWidth - tableWidth;
+                final adjustedCols = extraWidth > 0
+                    ? columns.map((c) => c.id == 'group' ? _ColSpec(c.id, c.label, c.width + extraWidth, c.align) : c).toList()
+                    : columns;
 
-                            return MouseRegion(
-                              onEnter: (_) => setState(() => _hoveredIndex = i),
-                              onExit: (_) => setState(() => _hoveredIndex = null),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 100),
-                                color: rowBg,
-                                height: 44,
-                                child: Row(
-                                  children: _buildRowCells(i, row, columns, theme, isDark),
-                                ),
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                    child: SizedBox(
+                      width: effectiveWidth,
+                      child: Column(
+                        children: [
+                          // Sticky header
+                          _AnalysisHeader(columns: adjustedCols, tableWidth: effectiveWidth),
+                          // Scrollable body
+                          Expanded(
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.vertical,
+                              child: Column(
+                                children: widget.rows.asMap().entries.map((entry) {
+                                  final i = entry.key;
+                                  final row = entry.value;
+                                  final isHovered = _hoveredIndex == i;
+                                  final isEven = i.isEven;
+
+                                  final rowBg = isHovered
+                                      ? theme.colorScheme.primary.withValues(alpha: 0.1)
+                                      : isEven
+                                          ? (isDark ? const Color(0xFF13281E) : Colors.white)
+                                          : (isDark ? const Color(0xFF1A3528) : const Color(0xFFF0FDF4));
+
+                                  return MouseRegion(
+                                    onEnter: (_) => setState(() => _hoveredIndex = i),
+                                    onExit: (_) => setState(() => _hoveredIndex = null),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 100),
+                                      color: rowBg,
+                                      height: 44,
+                                      child: Row(
+                                        children: _buildRowCells(i, row, adjustedCols, theme, isDark),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
                               ),
-                            );
-                          }).toList(),
-                        ),
+                            ),
+                          ),
+                          // Grand total
+                          _GrandTotalRow(
+                            summary: widget.summary,
+                            rows: widget.rows,
+                            columns: adjustedCols,
+                            tableWidth: effectiveWidth,
+                            numFmt: _numFmt,
+                            qtyFmt: _qtyFmt,
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                ),
-                // Grand total
-                _GrandTotalRow(
-                  summary: widget.summary,
-                  rows: widget.rows,
-                  columns: columns,
-                  tableWidth: tableWidth,
-                  numFmt: _numFmt,
-                  qtyFmt: _qtyFmt,
-                ),
-              ],
+                );
+              },
             ),
           ),
         ),
@@ -236,7 +251,7 @@ class _AnalysisTableState extends State<AnalysisTable> {
       if (opts.showAvgSellingPrice) _ColSpec('avgPrice', 'Avg Price', 95, TextAlign.right),
       if (opts.showFinalAmount) _ColSpec('finalAmt', 'Final Amt', 115, TextAlign.right),
       if (opts.showAvgProfit) _ColSpec('avgProfit', 'Avg Profit', 95, TextAlign.right),
-      _ColSpec('invoices', 'Invoices', 70, TextAlign.center),
+      _ColSpec('invoices', 'Invoices', 85, TextAlign.center),
     ];
   }
 
@@ -281,28 +296,22 @@ class _AnalysisHeader extends StatelessWidget {
     return Container(
       height: 44,
       color: isDark ? const Color(0xFF13281E) : const Color(0xFF064E3B),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: tableWidth,
-          child: Row(
-            children: columns.map((c) => SizedBox(
-              width: c.width,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text(
-                  c.label,
-                  textAlign: c.align,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
-                ),
+      child: Row(
+        children: columns.map((c) => SizedBox(
+          width: c.width,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Text(
+              c.label,
+              textAlign: c.align,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
               ),
-            )).toList(),
+            ),
           ),
-        ),
+        )).toList(),
       ),
     );
   }
@@ -336,49 +345,43 @@ class _GrandTotalRow extends StatelessWidget {
         color: Color(0xFF047857),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: tableWidth,
-          child: Row(
-            children: columns.map((col) {
-              String value = '';
-              const bold = TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: Colors.white);
-              const accent = TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5, color: Color(0xFF34D399));
+      child: Row(
+        children: columns.map((col) {
+          String value = '';
+          const bold = TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: Colors.white);
+          const accent = TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5, color: Color(0xFF34D399));
 
-              switch (col.id) {
-                case 'no': value = ''; break;
-                case 'group': value = 'GRAND TOTAL'; break;
-                case 'category': value = '${summary.totalProducts} items'; break;
-                case 'qty': value = qtyFmt.format(summary.totalQtySold); break;
-                case 'sales': value = '₹${numFmt.format(summary.totalSales)}'; break;
-                case 'gst': value = '₹${numFmt.format(summary.totalGst)}'; break;
-                case 'discount': value = '₹${numFmt.format(summary.totalDiscount)}'; break;
-                case 'purchase': value = '₹${numFmt.format(summary.totalPurchaseCost)}'; break;
-                case 'profit': value = '₹${numFmt.format(summary.totalProfit)}'; break;
-                case 'avgPrice': value = ''; break;
-                case 'finalAmt': value = '₹${numFmt.format(summary.grandTotal)}'; break;
-                case 'avgProfit': value = ''; break;
-                case 'invoices': value = '${summary.totalInvoices}'; break;
-              }
+          switch (col.id) {
+            case 'no': value = ''; break;
+            case 'group': value = 'GRAND TOTAL'; break;
+            case 'category': value = '${summary.totalProducts} items'; break;
+            case 'qty': value = qtyFmt.format(summary.totalQtySold); break;
+            case 'sales': value = '₹${numFmt.format(summary.totalSales)}'; break;
+            case 'gst': value = '₹${numFmt.format(summary.totalGst)}'; break;
+            case 'discount': value = '₹${numFmt.format(summary.totalDiscount)}'; break;
+            case 'purchase': value = '₹${numFmt.format(summary.totalPurchaseCost)}'; break;
+            case 'profit': value = '₹${numFmt.format(summary.totalProfit)}'; break;
+            case 'avgPrice': value = ''; break;
+            case 'finalAmt': value = '₹${numFmt.format(summary.grandTotal)}'; break;
+            case 'avgProfit': value = ''; break;
+            case 'invoices': value = '${summary.totalInvoices}'; break;
+          }
 
-              final isAccent = col.id == 'finalAmt' || col.id == 'profit';
+          final isAccent = col.id == 'finalAmt' || col.id == 'profit';
 
-              return SizedBox(
-                width: col.width,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Text(
-                    value,
-                    textAlign: col.align,
-                    style: isAccent ? accent : bold,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
+          return SizedBox(
+            width: col.width,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Text(
+                value,
+                textAlign: col.align,
+                style: isAccent ? accent : bold,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

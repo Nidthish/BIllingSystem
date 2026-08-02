@@ -49,7 +49,7 @@ class InvoiceGenerator {
                     children: [
                       pw.Text('INVOICE', style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex('#00875A'))),
                       pw.Text('No: ${sale.invoiceNo}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text('Date: ${DateFormat("dd/MM/yyyy HH:mm").format(DateTime.parse(sale.date))}'),
+                      pw.Text('Date: ${_formatDate(sale.date)}'),
                       pw.Text('Payment: ${sale.paymentMethod ?? "Cash"}'),
                     ],
                   ),
@@ -216,5 +216,22 @@ class InvoiceGenerator {
       onLayout: (PdfPageFormat format) async => pdfBytes,
       name: 'Invoice_${sale.invoiceNo}',
     );
+  }
+
+  static String _formatDate(String dateStr) {
+    if (dateStr.trim().isEmpty) return DateFormat("dd/MM/yyyy HH:mm").format(DateTime.now());
+    final parsed = DateTime.tryParse(dateStr);
+    if (parsed != null) {
+      return DateFormat("dd/MM/yyyy HH:mm").format(parsed);
+    }
+    try {
+      final d = DateFormat("dd/MM/yyyy HH:mm").parse(dateStr);
+      return DateFormat("dd/MM/yyyy HH:mm").format(d);
+    } catch (_) {}
+    try {
+      final d2 = DateFormat("dd/MM/yyyy").parse(dateStr);
+      return DateFormat("dd/MM/yyyy HH:mm").format(d2);
+    } catch (_) {}
+    return dateStr;
   }
 }
