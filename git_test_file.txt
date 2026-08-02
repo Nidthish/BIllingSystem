@@ -1,0 +1,3 @@
+Hello! This is a dummy test file created to verify GitHub Desktop change detection.
+File created at: 2026-08-02
+Project: SmartBill Billing System
