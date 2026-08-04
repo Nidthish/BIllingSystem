@@ -433,13 +433,14 @@ class _DateRangeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final label = (startDate != null && endDate != null)
         ? '${DateFormat('dd/MM/yy').format(startDate!)} - ${DateFormat('dd/MM/yy').format(endDate!)}'
         : 'Date Range';
 
     return OutlinedButton.icon(
-      icon: const Icon(Icons.date_range, size: 16),
-      label: Text(label, style: const TextStyle(fontSize: 12)),
+      icon: Icon(Icons.date_range, size: 16, color: isDark ? const Color(0xFF34D399) : const Color(0xFF00875A)),
+      label: Text(label, style: TextStyle(fontSize: 12, color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w600)),
       onPressed: () async {
         final range = await showDateRangePicker(
           context: context,
@@ -457,6 +458,8 @@ class _DateRangeButton extends StatelessWidget {
       },
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        side: BorderSide(color: isDark ? const Color(0xFF34D399) : const Color(0xFF00875A)),
+        backgroundColor: isDark ? const Color(0xFF13281E) : Colors.transparent,
       ),
     );
   }
@@ -471,6 +474,7 @@ class _ActionIconBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Tooltip(
       message: tooltip,
       child: InkWell(
@@ -479,10 +483,11 @@ class _ActionIconBtn extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: isDark ? Colors.white24 : Colors.grey.shade300),
+            color: isDark ? const Color(0xFF13281E) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 18, color: Colors.grey.shade600),
+          child: Icon(icon, size: 18, color: isDark ? Colors.white70 : Colors.grey.shade600),
         ),
       ),
     );

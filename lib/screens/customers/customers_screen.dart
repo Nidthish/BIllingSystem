@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../providers/customer_provider.dart';
 import '../../models/customer.dart';
@@ -6,92 +7,148 @@ import '../../models/customer.dart';
 class CustomersScreen extends StatelessWidget {
   const CustomersScreen({super.key});
 
-  void _showCustomerDialog(BuildContext context, {Customer? customer}) {
+  void _showCustomerDialog(BuildContext parentContext, {Customer? customer}) {
     final nameController = TextEditingController(text: customer?.customerName ?? '');
     final phoneController = TextEditingController(text: customer?.phone ?? '');
     final addressController = TextEditingController(text: customer?.address ?? '');
     final cityController = TextEditingController(text: customer?.city ?? '');
     final gstController = TextEditingController(text: customer?.gstNumber ?? '');
     final formKey = GlobalKey<FormState>();
+    String? successMessage;
 
     showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(customer == null ? 'Add Customer' : 'Edit Customer'),
-        content: Form(
-          key: formKey,
-          child: Container(
-            width: 450,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Customer Name *'),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Customer Name is required' : null,
-                ),
-                const SizedBox(height: 12),
-                Row(
+      context: parentContext,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Text(customer == null ? 'Add Customer' : 'Edit Customer'),
+            content: Form(
+              key: formKey,
+              child: SizedBox(
+                width: 450,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: phoneController,
-                        decoration: const InputDecoration(labelText: 'Phone Number'),
-                        keyboardType: TextInputType.phone,
+                    if (successMessage != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE6F4EA),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF00875A)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle, color: Color(0xFF00875A), size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                successMessage!,
+                                style: const TextStyle(color: Color(0xFF00875A), fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(height: 12),
+                    ],
+                    TextFormField(
+                      controller: nameController,
+                      decoration: const InputDecoration(labelText: 'Customer Name *'),
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Customer Name is required' : null,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: gstController,
-                        decoration: const InputDecoration(labelText: 'GST Number (Optional)'),
-                      ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: phoneController,
+                            decoration: const InputDecoration(labelText: 'Phone Number (10 digits) *'),
+                            keyboardType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(10),
+                            ],
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) {
+                                return 'Phone number is required';
+                              }
+                              final digitsOnly = v.trim().replaceAll(RegExp(r'\D'), '');
+                              if (digitsOnly.length != 10) {
+                                return 'Must be exactly 10 digits';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: gstController,
+                            decoration: const InputDecoration(labelText: 'GST Number (Optional)'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: addressController,
+                      decoration: const InputDecoration(labelText: 'Address'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: cityController,
+                      decoration: const InputDecoration(labelText: 'City'),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: addressController,
-                  decoration: const InputDecoration(labelText: 'Address'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: cityController,
-                  decoration: const InputDecoration(labelText: 'City'),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (formKey.currentState!.validate()) {
-                final newCustomer = Customer(
-                  customerId: customer?.customerId,
-                  customerName: nameController.text.trim(),
-                  phone: phoneController.text.trim(),
-                  address: addressController.text.trim(),
-                  city: cityController.text.trim(),
-                  gstNumber: gstController.text.trim(),
-                );
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(customer == null ? 'Close' : 'Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00875A),
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () async {
+                  if (formKey.currentState!.validate()) {
+                    final addedName = nameController.text.trim();
+                    final newCustomer = Customer(
+                      customerId: customer?.customerId,
+                      customerName: addedName,
+                      phone: phoneController.text.trim(),
+                      address: addressController.text.trim(),
+                      city: cityController.text.trim(),
+                      gstNumber: gstController.text.trim(),
+                    );
 
-                final provider = context.read<CustomerProvider>();
-                if (customer == null) {
-                  await provider.addCustomer(newCustomer);
-                } else {
-                  await provider.updateCustomer(newCustomer);
-                }
-                if (context.mounted) Navigator.pop(dialogContext);
-              }
-            },
-            child: Text(customer == null ? 'Add Customer' : 'Save Changes'),
-          ),
-        ],
+                    final provider = parentContext.read<CustomerProvider>();
+                    if (customer == null) {
+                      await provider.addCustomer(newCustomer);
+                      nameController.clear();
+                      phoneController.clear();
+                      addressController.clear();
+                      cityController.clear();
+                      gstController.clear();
+                      setState(() {
+                        successMessage = 'Customer "$addedName" added! Add another or click Close.';
+                      });
+                      formKey.currentState?.reset();
+                    } else {
+                      await provider.updateCustomer(newCustomer);
+                      if (parentContext.mounted) Navigator.pop(dialogContext);
+                    }
+                  }
+                },
+                child: Text(customer == null ? 'Add Customer' : 'Save Changes'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

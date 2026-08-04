@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path_provider/path_provider.dart';
@@ -28,8 +27,6 @@ class DatabaseHelper {
     
     final documentsDirectory = await getApplicationDocumentsDirectory();
     final path = join(documentsDirectory.path, filePath);
-
-    final dbExists = await File(path).exists();
 
     final db = await dbFactory.openDatabase(
       path,
@@ -69,11 +66,15 @@ class DatabaseHelper {
     try { await db.execute('ALTER TABLE sales ADD COLUMN cgst_amount REAL DEFAULT 0;'); } catch (_) {}
     try { await db.execute('ALTER TABLE sales ADD COLUMN sgst_amount REAL DEFAULT 0;'); } catch (_) {}
 
-    // Ensure initial script and 2026 test sales are executed if missing
+    // Wipe old sample data if present and populate new translated official SK Masala catalog
     try {
-      final recentSales = await db.rawQuery("SELECT COUNT(*) as count FROM sales WHERE date LIKE '2026-07%'");
-      final count = (recentSales.first.values.first as num?)?.toInt() ?? 0;
-      if (count < 5) {
+      final catalogCheck = await db.rawQuery("SELECT COUNT(*) as count FROM products WHERE barcode = 'SKMI001'");
+      final count = (catalogCheck.first.values.first as num?)?.toInt() ?? 0;
+      if (count == 0) {
+        await db.execute('DELETE FROM sale_items;');
+        await db.execute('DELETE FROM sales;');
+        await db.execute('DELETE FROM products;');
+        await db.execute('DELETE FROM categories;');
         await _executeBatchScript(db, initialSqlScript);
       }
     } catch (e) {
@@ -146,9 +147,9 @@ class DatabaseHelper {
     final result = await db.query('settings');
     if (result.isNotEmpty) {
       final s = Settings.fromMap(result.first);
-      if (s.shopName != 'SK Masala' || s.address != 'Mullai Street, Sanjeevi Nagar') {
+      if (s.shopName != 'SK TRADERS' || s.address != 'Mullai Street, Sanjeevi Nagar') {
         final updated = Settings(
-          shopName: 'SK Masala',
+          shopName: 'SK TRADERS',
           address: 'Mullai Street, Sanjeevi Nagar',
           phone: s.phone.isEmpty ? '0422-2345678' : s.phone,
           gstNumber: s.gstNumber.isEmpty ? '33ABCDE1234F1Z5' : s.gstNumber,
@@ -161,7 +162,7 @@ class DatabaseHelper {
       return s;
     }
     final defaultSettings = Settings(
-      shopName: 'SK Masala',
+      shopName: 'SK TRADERS',
       address: 'Mullai Street, Sanjeevi Nagar',
       phone: '0422-2345678',
       gstNumber: '33ABCDE1234F1Z5',
@@ -344,5 +345,14 @@ class DatabaseHelper {
       whereArgs: [saleId],
     );
     return result.map((json) => SaleItem.fromMap(json)).toList();
+  }
+
+  Future<void> resetToOfficialCatalog() async {
+    final db = await instance.database;
+    await db.execute('DELETE FROM sale_items;');
+    await db.execute('DELETE FROM sales;');
+    await db.execute('DELETE FROM products;');
+    await db.execute('DELETE FROM categories;');
+    await _executeBatchScript(db, initialSqlScript);
   }
 }

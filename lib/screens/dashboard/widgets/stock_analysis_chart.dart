@@ -32,15 +32,16 @@ class _StockAnalysisChartState extends State<StockAnalysisChart> {
       }
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final total = inStock + lowStock + outOfStock;
 
     if (total == 0) {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
         ),
         child: const Center(child: Text('No stock data available')),
       );
@@ -49,9 +50,9 @@ class _StockAnalysisChartState extends State<StockAnalysisChart> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

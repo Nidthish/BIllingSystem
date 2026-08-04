@@ -22,15 +22,17 @@ class SalesTrendChart extends StatelessWidget {
       dailySales[dateStr]!['count'] = (dailySales[dateStr]!['count'] as int) + 1;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     var sortedKeys = dailySales.keys.toList()..sort();
     
     if (sortedKeys.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
         ),
         child: const Center(child: Text('No data available for Sales Trend')),
       );
@@ -51,9 +53,9 @@ class SalesTrendChart extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

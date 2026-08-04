@@ -14,14 +14,14 @@ class ProductsScreen extends StatelessWidget {
   void _showProductDialog(BuildContext parentContext, {Product? product}) {
     final nameController = TextEditingController(text: product?.productName ?? '');
     final barcodeController = TextEditingController(text: product?.barcode ?? '');
-    final purchasePriceController = TextEditingController(text: product?.purchasePrice.toString() ?? '0');
-    final sellingPriceController = TextEditingController(text: product?.sellingPrice.toString() ?? '0');
-    final stockController = TextEditingController(text: product?.stock.toString() ?? '0');
-    final minStockController = TextEditingController(text: product?.minimumStock.toString() ?? '5');
-    final unitController = TextEditingController(text: product?.unit ?? 'pcs');
+    final purchasePriceController = TextEditingController(text: product != null ? product.purchasePrice.toString() : '');
+    final sellingPriceController = TextEditingController(text: product != null ? product.sellingPrice.toString() : '');
+    final stockController = TextEditingController(text: product != null ? product.stock.toString() : '');
+    final minStockController = TextEditingController(text: product != null ? product.minimumStock.toString() : '');
+    final unitController = TextEditingController(text: product != null ? (product.unit ?? '') : '');
     
-    final categoryList = parentContext.read<CategoryProvider>().categories;
-    int? selectedCategory = product?.categoryId ?? (categoryList.isNotEmpty ? categoryList.first.categoryId : null);
+    int? selectedCategory = product?.categoryId;
+    String? successMessage;
 
     final formKey = GlobalKey<FormState>();
 
@@ -41,6 +41,29 @@ class ProductsScreen extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (successMessage != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE6F4EA),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFF00875A)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.check_circle, color: Color(0xFF00875A), size: 20),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    successMessage!,
+                                    style: const TextStyle(color: Color(0xFF00875A), fontWeight: FontWeight.bold, fontSize: 13),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         Row(
                           children: [
                             Expanded(
@@ -64,7 +87,10 @@ class ProductsScreen extends StatelessWidget {
                         const SizedBox(height: 12),
                         DropdownButtonFormField<int>(
                           initialValue: selectedCategory,
-                          decoration: const InputDecoration(labelText: 'Category *'),
+                          decoration: const InputDecoration(
+                            labelText: 'Category *',
+                            hintText: 'Select Category',
+                          ),
                           items: categories.map((c) => DropdownMenuItem(
                             value: c.categoryId,
                             child: Text(c.categoryName),
@@ -86,7 +112,8 @@ class ProductsScreen extends StatelessWidget {
                                 decoration: const InputDecoration(labelText: 'Purchase Price (₹)'),
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                 validator: (v) {
-                                  final numVal = double.tryParse(v ?? '');
+                                  if (v == null || v.trim().isEmpty) return null;
+                                  final numVal = double.tryParse(v.trim());
                                   if (numVal == null || numVal < 0) return 'Invalid Price';
                                   return null;
                                 },
@@ -99,7 +126,8 @@ class ProductsScreen extends StatelessWidget {
                                 decoration: const InputDecoration(labelText: 'Selling Price (₹)'),
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                 validator: (v) {
-                                  final numVal = double.tryParse(v ?? '');
+                                  if (v == null || v.trim().isEmpty) return null;
+                                  final numVal = double.tryParse(v.trim());
                                   if (numVal == null || numVal < 0) return 'Invalid Price';
                                   return null;
                                 },
@@ -116,7 +144,8 @@ class ProductsScreen extends StatelessWidget {
                                 decoration: const InputDecoration(labelText: 'Current Stock'),
                                 keyboardType: TextInputType.number,
                                 validator: (v) {
-                                  final numVal = int.tryParse(v ?? '');
+                                  if (v == null || v.trim().isEmpty) return null;
+                                  final numVal = int.tryParse(v.trim());
                                   if (numVal == null || numVal < 0) return 'Invalid Stock';
                                   return null;
                                 },
@@ -129,7 +158,8 @@ class ProductsScreen extends StatelessWidget {
                                 decoration: const InputDecoration(labelText: 'Minimum Stock'),
                                 keyboardType: TextInputType.number,
                                 validator: (v) {
-                                  final numVal = int.tryParse(v ?? '');
+                                  if (v == null || v.trim().isEmpty) return null;
+                                  final numVal = int.tryParse(v.trim());
                                   if (numVal == null || numVal < 0) return 'Invalid Min Stock';
                                   return null;
                                 },
@@ -145,7 +175,7 @@ class ProductsScreen extends StatelessWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Cancel'),
+                  child: Text(product == null ? 'Close' : 'Cancel'),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -155,36 +185,44 @@ class ProductsScreen extends StatelessWidget {
                   onPressed: () async {
                     if (formKey.currentState!.validate()) {
                       try {
+                        final addedName = nameController.text.trim();
                         final newProduct = Product(
                           productId: product?.productId,
-                          productName: nameController.text.trim(),
+                          productName: addedName,
                           barcode: barcodeController.text.trim().isEmpty ? null : barcodeController.text.trim(),
                           categoryId: selectedCategory,
                           unit: unitController.text.trim().isEmpty ? 'pcs' : unitController.text.trim(),
-                          purchasePrice: double.tryParse(purchasePriceController.text) ?? 0.0,
-                          sellingPrice: double.tryParse(sellingPriceController.text) ?? 0.0,
-                          stock: int.tryParse(stockController.text) ?? 0,
-                          minimumStock: int.tryParse(minStockController.text) ?? 5,
-                          gst: 0.0, // Products are tax-neutral
+                          purchasePrice: double.tryParse(purchasePriceController.text.trim()) ?? 0.0,
+                          sellingPrice: double.tryParse(sellingPriceController.text.trim()) ?? 0.0,
+                          stock: int.tryParse(stockController.text.trim()) ?? 0,
+                          minimumStock: int.tryParse(minStockController.text.trim()) ?? 0,
+                          gst: 0.0,
                         );
 
                         final provider = parentContext.read<ProductProvider>();
                         if (product == null) {
                           await provider.addProduct(newProduct);
-                          if (parentContext.mounted) {
-                            ScaffoldMessenger.of(parentContext).showSnackBar(
-                              const SnackBar(content: Text('Product added successfully!'), backgroundColor: Color(0xFF00875A)),
-                            );
-                          }
+                          nameController.clear();
+                          barcodeController.clear();
+                          purchasePriceController.clear();
+                          sellingPriceController.clear();
+                          stockController.clear();
+                          minStockController.clear();
+                          unitController.clear();
+                          setState(() {
+                            selectedCategory = null;
+                            successMessage = 'Product "$addedName" added! Add another product or click Close.';
+                          });
+                          formKey.currentState?.reset();
                         } else {
                           await provider.updateProduct(newProduct);
                           if (parentContext.mounted) {
                             ScaffoldMessenger.of(parentContext).showSnackBar(
                               const SnackBar(content: Text('Product updated successfully!'), backgroundColor: Color(0xFF00875A)),
                             );
+                            Navigator.pop(dialogContext);
                           }
                         }
-                        if (parentContext.mounted) Navigator.pop(dialogContext);
                       } catch (e) {
                         if (parentContext.mounted) {
                           ScaffoldMessenger.of(parentContext).showSnackBar(
@@ -256,7 +294,7 @@ class ProductsScreen extends StatelessWidget {
                 ),
                 onPressed: () async {
                   final settings = context.read<SettingsProvider>().settings ?? Settings(
-                    shopName: 'SK Masala',
+                    shopName: 'SK TRADERS',
                     address: '15 Market Street, Coimbatore, TN 641001',
                     phone: '0422-2345678',
                     gstNumber: '33ABCDE1234F1Z5',
@@ -299,7 +337,7 @@ class ProductsScreen extends StatelessWidget {
                 ),
                 onPressed: () async {
                   final settings = context.read<SettingsProvider>().settings ?? Settings(
-                    shopName: 'SK Masala',
+                    shopName: 'SK TRADERS',
                     address: '15 Market Street, Coimbatore, TN 641001',
                     phone: '0422-2345678',
                     gstNumber: '33ABCDE1234F1Z5',

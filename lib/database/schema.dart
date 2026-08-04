@@ -4,10 +4,13 @@ CREATE TABLE categories (
     category_name TEXT NOT NULL,
     description TEXT
 );
-INSERT INTO "categories" VALUES(1,'Groceries','Daily grocery and food items');
-INSERT INTO "categories" VALUES(2,'Beverages','Cold drinks, juices, water bottles');
-INSERT INTO "categories" VALUES(3,'Personal Care','Soaps, shampoos, cosmetics, hygiene items');
-INSERT INTO "categories" VALUES(4,'Stationery','Pens, notebooks, office and school supplies');
+INSERT INTO "categories" VALUES(1,'Masala Varieties','Spice mixes and masala powders');
+INSERT INTO "categories" VALUES(2,'Masala Ingredients','Raw spices, grains, and ingredients');
+INSERT INTO "categories" VALUES(3,'Aroma Masala Ingredients','Aromatic whole spices and flavouring items');
+INSERT INTO "categories" VALUES(4,'Flour Varieties','Grain flours and ready mix powders');
+INSERT INTO "categories" VALUES(5,'Dal Varieties','Lentils, pulses, and gram varieties');
+INSERT INTO "categories" VALUES(6,'Cashew Varieties','Cashew nut splits, pieces, and whole grades');
+INSERT INTO "categories" VALUES(7,'Dry Fruits','Nuts, dried fruits, and edible seeds');
 
 CREATE TABLE customers (
     customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -18,34 +21,10 @@ CREATE TABLE customers (
     gst_number TEXT,
     created_at TEXT
 );
-INSERT INTO "customers" VALUES(1,'Rajesh Pillai','9598806645','13 Sathy Road','Chennai');
-INSERT INTO "customers" VALUES(2,'Divya Nair','9243171768','119 Sathy Road','Salem');
-INSERT INTO "customers" VALUES(3,'Anitha Raj','9910943524','114 Avinashi Road','Madurai');
-INSERT INTO "customers" VALUES(4,'Praveen Iyer','9991816852','141 Ram Nagar','Chennai');
-INSERT INTO "customers" VALUES(5,'Uma Nair','9583258726','67 RS Puram','Madurai');
-INSERT INTO "customers" VALUES(6,'Karthik Pillai','9620332086','62 Peelamedu','Tirupur');
-INSERT INTO "customers" VALUES(7,'Arun Babu','9351785565','70 Saibaba Colony','Erode');
-INSERT INTO "customers" VALUES(8,'Revathi Sharma','9248578017','39 RS Puram','Tirupur');
-INSERT INTO "customers" VALUES(9,'Rajesh Prakash','9858511779','55 Gandhi Nagar','Tirupur');
-INSERT INTO "customers" VALUES(10,'Swathi Raj','9682624278','120 Town Hall','Coimbatore');
-INSERT INTO "customers" VALUES(11,'Vijay Iyer','9518197538','150 MG Road','Salem');
-INSERT INTO "customers" VALUES(12,'Manoj Nair','9106330865','91 Peelamedu','Tirupur');
-INSERT INTO "customers" VALUES(13,'Swathi Pillai','9902638839','140 Avinashi Road','Chennai');
-INSERT INTO "customers" VALUES(14,'Nithya Menon','9393062061','112 Ram Nagar','Coimbatore');
-INSERT INTO "customers" VALUES(15,'Manoj Raj','9818197581','104 Race Course Road','Tirupur');
-INSERT INTO "customers" VALUES(16,'Suresh Reddy','9673510887','7 Town Hall','Salem');
-INSERT INTO "customers" VALUES(17,'Ganesh Kumar','9190137896','110 Race Course Road','Tirupur');
-INSERT INTO "customers" VALUES(18,'Kavitha Kumar','9379340713','98 Saibaba Colony','Chennai');
-INSERT INTO "customers" VALUES(19,'Sathish Raj','9462388455','98 Peelamedu','Tirupur');
-INSERT INTO "customers" VALUES(20,'Karthik Sharma','9604988121','5 Sathy Road','Coimbatore');
-INSERT INTO "customers" VALUES(21,'Deepa Menon','9798086909','18 MG Road','Coimbatore');
-INSERT INTO "customers" VALUES(22,'Meena Menon','9121882877','40 RS Puram','Chennai');
-INSERT INTO "customers" VALUES(23,'Nithya Sharma','9705557720','56 Ram Nagar','Madurai');
-INSERT INTO "customers" VALUES(24,'Karthik Raj','9280162221','30 Race Course Road','Erode');
-INSERT INTO "customers" VALUES(25,'Walk-in Customer','','','Coimbatore');
+INSERT INTO "customers" VALUES(1,'Walk-in Customer','','','Coimbatore',NULL,NULL);
 
 CREATE TABLE products (
-    product_id INTEGER PRIMARY KEY,
+    product_id INTEGER PRIMARY KEY AUTOINCREMENT,
     product_name TEXT NOT NULL,
     category_id INTEGER,
     purchase_price REAL,
@@ -58,95 +37,170 @@ CREATE TABLE products (
     created_at TEXT,
     FOREIGN KEY (category_id) REFERENCES categories(category_id)
 );
-INSERT INTO "products" VALUES(1,'Basmati Rice 1kg',1,194.71,225.38,150,20,5.0,'pcs','2025-01-15 10:00:00');
-INSERT INTO "products" VALUES(2,'Sona Masoori Rice 1kg',1,223.05,301.79,289,10,5.0,'pcs','2025-02-07 14:00:00');
-INSERT INTO "products" VALUES(3,'Toor Dal 1kg',1,17.28,20.36,129,37,5.0,'pcs','2025-02-08 08:00:00');
-INSERT INTO "products" VALUES(4,'Moong Dal 1kg',1,171.88,234.58,289,31,5.0,'pcs','2025-01-15 15:00:00');
-INSERT INTO "products" VALUES(5,'Chana Dal 1kg',1,180.07,250.81,13,15,5.0,'pcs','2025-02-14 14:00:00');
-INSERT INTO "products" VALUES(6,'Urad Dal 1kg',1,107.35,128.46,182,11,5.0,'pcs','2025-01-06 14:00:00');
-INSERT INTO "products" VALUES(7,'Sunflower Oil 1L',1,36.24,50.89,145,7,5.0,'pcs','2025-02-16 15:00:00');
-INSERT INTO "products" VALUES(8,'Groundnut Oil 1L',1,164.58,237.31,203,10,5.0,'pcs','2025-02-05 12:00:00');
-INSERT INTO "products" VALUES(9,'Mustard Oil 1L',1,250.19,334.14,195,41,5.0,'pcs','2025-01-13 09:00:00');
-INSERT INTO "products" VALUES(10,'Wheat Flour 1kg',1,21.38,26.05,158,10,5.0,'pcs','2025-02-24 11:00:00');
-INSERT INTO "products" VALUES(11,'Maida 1kg',1,261.01,329.93,242,45,5.0,'pcs','2025-02-23 13:00:00');
-INSERT INTO "products" VALUES(12,'Sugar 1kg',1,55.49,69.73,146,49,5.0,'pcs','2025-03-01 18:00:00');
-INSERT INTO "products" VALUES(13,'Salt 1kg',1,197.23,262.86,97,39,5.0,'pcs','2025-02-16 11:00:00');
-INSERT INTO "products" VALUES(14,'Turmeric Powder 100g',1,55.71,70.41,295,19,5.0,'pcs','2025-02-13 13:00:00');
-INSERT INTO "products" VALUES(15,'Chilli Powder 100g',1,254.11,351.38,127,7,5.0,'pcs','2025-02-21 13:00:00');
-INSERT INTO "products" VALUES(16,'Coriander Powder 100g',1,125.14,146.4,300,50,5.0,'pcs','2025-01-21 11:00:00');
-INSERT INTO "products" VALUES(17,'Garam Masala 50g',1,199.39,252.96,244,14,5.0,'pcs','2025-01-17 10:00:00');
-INSERT INTO "products" VALUES(18,'Tea Powder 250g',1,80.02,105.5,144,42,5.0,'pcs','2025-01-28 17:00:00');
-INSERT INTO "products" VALUES(19,'Instant Coffee 100g',1,124.62,151.51,80,37,5.0,'pcs','2025-02-01 09:00:00');
-INSERT INTO "products" VALUES(20,'Poha 500g',1,228.69,322.07,88,45,5.0,'pcs','2025-01-11 18:00:00');
-INSERT INTO "products" VALUES(21,'Rava/Sooji 500g',1,131.27,153.46,205,43,5.0,'pcs','2025-01-30 16:00:00');
-INSERT INTO "products" VALUES(22,'Idli Rice 1kg',1,81.41,107.13,15,48,5.0,'pcs','2025-02-16 09:00:00');
-INSERT INTO "products" VALUES(23,'Jaggery 500g',1,207.06,271.47,146,46,5.0,'pcs','2025-01-22 09:00:00');
-INSERT INTO "products" VALUES(24,'Tamarind 250g',1,93.7,112.2,11,21,5.0,'pcs','2025-02-02 10:00:00');
-INSERT INTO "products" VALUES(25,'Papad Pack',1,156.24,184.66,162,45,5.0,'pcs','2025-02-02 17:00:00');
-INSERT INTO "products" VALUES(26,'Coca-Cola 750ml',2,66.08,83.4,92,39,12.0,'pcs','2025-02-19 16:00:00');
-INSERT INTO "products" VALUES(27,'Pepsi 750ml',2,276.2,367.26,260,6,12.0,'pcs','2025-01-08 13:00:00');
-INSERT INTO "products" VALUES(28,'Sprite 750ml',2,264.59,370.29,167,20,12.0,'pcs','2025-01-04 11:00:00');
-INSERT INTO "products" VALUES(29,'Mineral Water 1L',2,264.38,379.14,53,36,12.0,'pcs','2025-02-22 09:00:00');
-INSERT INTO "products" VALUES(30,'Mineral Water 500ml',2,293.57,384.52,74,13,12.0,'pcs','2025-02-12 15:00:00');
-INSERT INTO "products" VALUES(31,'Orange Juice 1L',2,284.48,341.24,280,43,12.0,'pcs','2025-01-28 11:00:00');
-INSERT INTO "products" VALUES(32,'Mango Juice 1L',2,279.24,384.4,112,50,12.0,'pcs','2025-01-20 14:00:00');
-INSERT INTO "products" VALUES(33,'Apple Juice 1L',2,298.58,401.58,234,38,12.0,'pcs','2025-01-29 09:00:00');
-INSERT INTO "products" VALUES(34,'Soda 750ml',2,80.39,93.99,20,42,12.0,'pcs','2025-02-05 11:00:00');
-INSERT INTO "products" VALUES(35,'Energy Drink 250ml',2,179.82,207.18,40,19,12.0,'pcs','2025-01-05 08:00:00');
-INSERT INTO "products" VALUES(36,'Buttermilk 200ml',2,259.01,303.37,131,22,12.0,'pcs','2025-02-12 15:00:00');
-INSERT INTO "products" VALUES(37,'Lassi 200ml',2,70.56,83.94,252,20,12.0,'pcs','2025-02-20 15:00:00');
-INSERT INTO "products" VALUES(38,'Green Tea 25 Bags',2,243.79,294.28,59,47,12.0,'pcs','2025-01-28 13:00:00');
-INSERT INTO "products" VALUES(39,'Lemon Drink 500ml',2,131.68,169.88,37,48,12.0,'pcs','2025-02-11 18:00:00');
-INSERT INTO "products" VALUES(40,'Coconut Water 200ml',2,36.74,46.69,183,11,12.0,'pcs','2025-01-16 11:00:00');
-INSERT INTO "products" VALUES(41,'Milk 500ml',2,63.54,81.62,226,16,12.0,'pcs','2025-01-18 15:00:00');
-INSERT INTO "products" VALUES(42,'Flavoured Milk 200ml',2,80.94,115.5,236,40,12.0,'pcs','2025-01-07 08:00:00');
-INSERT INTO "products" VALUES(43,'Iced Tea 500ml',2,198.43,260.38,17,10,12.0,'pcs','2025-03-01 11:00:00');
-INSERT INTO "products" VALUES(44,'Tonic Water 300ml',2,56.56,73.28,119,30,12.0,'pcs','2025-02-27 08:00:00');
-INSERT INTO "products" VALUES(45,'Soda Water 750ml',2,56.07,64.52,209,21,12.0,'pcs','2025-03-01 15:00:00');
-INSERT INTO "products" VALUES(46,'Lux Soap 100g',3,91.29,124.06,294,47,18.0,'pcs','2025-02-15 15:00:00');
-INSERT INTO "products" VALUES(47,'Dove Soap 100g',3,53.2,65.92,39,42,18.0,'pcs','2025-02-17 16:00:00');
-INSERT INTO "products" VALUES(48,'Lifebuoy Soap 100g',3,25.8,32.1,35,42,18.0,'pcs','2025-01-31 16:00:00');
-INSERT INTO "products" VALUES(49,'Dove Shampoo 180ml',3,276.46,361.98,39,37,18.0,'pcs','2025-01-06 10:00:00');
-INSERT INTO "products" VALUES(50,'Head & Shoulders Shampoo 180ml',3,28.01,32.78,130,30,18.0,'pcs','2025-01-08 17:00:00');
-INSERT INTO "products" VALUES(51,'Clinic Plus Shampoo 175ml',3,79.89,106.12,51,31,18.0,'pcs','2025-02-12 17:00:00');
-INSERT INTO "products" VALUES(52,'Colgate Toothpaste 100g',3,173.05,215.43,143,18,18.0,'pcs','2025-02-12 13:00:00');
-INSERT INTO "products" VALUES(53,'Pepsodent Toothpaste 100g',3,77.7,98.58,163,34,18.0,'pcs','2025-01-21 09:00:00');
-INSERT INTO "products" VALUES(54,'Toothbrush',3,10.72,14.33,298,11,18.0,'pcs','2025-01-05 16:00:00');
-INSERT INTO "products" VALUES(55,'Dettol Handwash 200ml',3,70.24,86.36,188,9,18.0,'pcs','2025-02-26 11:00:00');
-INSERT INTO "products" VALUES(56,'Ponds Talcum Powder 100g',3,115.9,138.77,288,50,18.0,'pcs','2025-01-20 17:00:00');
-INSERT INTO "products" VALUES(57,'Vaseline Lotion 200ml',3,295.29,411.08,280,5,18.0,'pcs','2025-02-12 16:00:00');
-INSERT INTO "products" VALUES(58,'Nivea Cream 100ml',3,95.42,128.72,78,21,18.0,'pcs','2025-01-08 09:00:00');
-INSERT INTO "products" VALUES(59,'Fair & Lovely Cream 50g',3,224.79,268.99,154,43,18.0,'pcs','2025-01-14 13:00:00');
-INSERT INTO "products" VALUES(60,'Gillette Razor',3,67.45,90.4,145,37,18.0,'pcs','2025-02-01 12:00:00');
-INSERT INTO "products" VALUES(61,'Shaving Cream 70g',3,272.36,382.35,57,45,18.0,'pcs','2025-01-28 12:00:00');
-INSERT INTO "products" VALUES(62,'Sanitary Pads Pack',3,20.87,26.09,76,45,18.0,'pcs','2025-01-17 10:00:00');
-INSERT INTO "products" VALUES(63,'Baby Diapers Pack',3,224.44,295.25,228,40,18.0,'pcs','2025-01-01 09:00:00');
-INSERT INTO "products" VALUES(64,'Hair Oil 200ml',3,29.97,42.41,86,39,18.0,'pcs','2025-01-03 13:00:00');
-INSERT INTO "products" VALUES(65,'Face Wash 100ml',3,178.09,212.72,75,7,18.0,'pcs','2025-01-20 13:00:00');
-INSERT INTO "products" VALUES(66,'Deodorant Spray',3,270.5,375.68,30,27,18.0,'pcs','2025-01-14 18:00:00');
-INSERT INTO "products" VALUES(67,'Cotton Buds Pack',3,80.86,95.48,296,31,18.0,'pcs','2025-02-09 10:00:00');
-INSERT INTO "products" VALUES(68,'Nail Cutter',3,278.32,339.83,93,16,18.0,'pcs','2025-02-26 14:00:00');
-INSERT INTO "products" VALUES(69,'Comb',3,15.24,20.89,180,31,18.0,'pcs','2025-02-21 18:00:00');
-INSERT INTO "products" VALUES(70,'Hand Sanitizer 100ml',3,260.31,362.67,146,15,18.0,'pcs','2025-02-20 09:00:00');
-INSERT INTO "products" VALUES(71,'Notebook 200pg',4,119.7,139.05,250,19,12.0,'pcs','2025-01-13 15:00:00');
-INSERT INTO "products" VALUES(72,'Notebook 100pg',4,110.1,153.72,126,19,12.0,'pcs','2025-01-02 18:00:00');
-INSERT INTO "products" VALUES(73,'Ball Pen (Blue)',4,64.39,80.39,45,22,12.0,'pcs','2025-01-23 18:00:00');
-INSERT INTO "products" VALUES(74,'Ball Pen (Black)',4,156.75,212.22,284,26,12.0,'pcs','2025-03-02 08:00:00');
-INSERT INTO "products" VALUES(75,'Gel Pen',4,41.68,60.07,101,42,12.0,'pcs','2025-01-17 08:00:00');
-INSERT INTO "products" VALUES(76,'Pencil HB',4,39.65,50.77,170,32,12.0,'pcs','2025-02-08 16:00:00');
-INSERT INTO "products" VALUES(77,'Eraser',4,41.77,59.31,107,21,12.0,'pcs','2025-01-03 14:00:00');
-INSERT INTO "products" VALUES(78,'Sharpener',4,8.49,12.12,285,48,12.0,'pcs','2025-02-16 18:00:00');
-INSERT INTO "products" VALUES(79,'A4 Paper Ream',4,65.53,83.84,179,44,12.0,'pcs','2025-01-21 18:00:00');
-INSERT INTO "products" VALUES(80,'Geometry Box',4,255.62,349.16,163,37,12.0,'pcs','2025-01-20 18:00:00');
-INSERT INTO "products" VALUES(81,'Highlighter',4,127.25,161.7,161,40,12.0,'pcs','2025-01-09 11:00:00');
-INSERT INTO "products" VALUES(82,'Marker Pen',4,130.77,187.28,99,44,12.0,'pcs','2025-02-06 12:00:00');
-INSERT INTO "products" VALUES(83,'Stapler',4,126.57,177.21,165,23,12.0,'pcs','2025-01-14 14:00:00');
-INSERT INTO "products" VALUES(84,'Stapler Pins Box',4,237.44,316.27,174,34,12.0,'pcs','2025-01-29 15:00:00');
-INSERT INTO "products" VALUES(85,'Glue Stick',4,205.28,267.55,96,47,12.0,'pcs','2025-01-06 12:00:00');
-INSERT INTO "products" VALUES(86,'Scissors',4,158.51,212.38,181,10,12.0,'pcs','2025-02-22 11:00:00');
-INSERT INTO "products" VALUES(87,'Crayons Pack',4,204.46,248.91,111,14,12.0,'pcs','2025-01-02 08:00:00');
-INSERT INTO "products" VALUES(88,'Sketch Pens Pack',4,79.49,102.74,47,34,12.0,'pcs','2025-01-27 18:00:00');
-INSERT INTO "products" VALUES(89,'File Folder',4,176.1,240.47,206,36,12.0,'pcs','2025-01-26 11:00:00');
+
+-- Masala Varieties (Category 1)
+INSERT INTO "products" (product_name, category_id, purchase_price, selling_price, stock, minimum_stock, gst, unit, barcode) VALUES
+('Chettinadu Chicken Masala', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK002'),
+('Curry Chilli Powder', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK008'),
+('SPL Curry Chilli Powder', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK008A'),
+('SPL Biryani Masala', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK007'),
+('Chicken Masala', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK054'),
+('Mutton Masala', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK024'),
+('Fish Fry Masala', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK025'),
+('SPL Chettinadu Garam Masala', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK048'),
+('SPL Pepper Chicken Masala', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK041'),
+('SPL Fish Curry Masala', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK045'),
+('SPL Curry Masala', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK046'),
+('SPL Instant 65 Masala', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK059'),
+('SPL Sambar Podi', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK033A'),
+('SPL Ground Sambar Podi', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK033'),
+('SPL Rasam Podi', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK075A'),
+('SPL Ground Rasam Podi', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK055'),
+('SPL Idli Milagai Podi', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK072G'),
+('Black Sesame Idli Milagai Podi', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK022A'),
+('SPL Chilli Powder', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK036'),
+('SPL Kashmiri Chilli Powder', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK043'),
+('Chilli Powder', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK030'),
+('Coriander Powder', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK035'),
+('Roasted Country Coriander Powder', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK050'),
+('Roasted Pepper Powder', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK004'),
+('Cumin Powder', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK038'),
+('Turmeric Powder', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK032'),
+('SPL Garlic Paruppu Podi', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK066A'),
+('Curry Leaves Idly Podi', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK082'),
+('White Sesame Idli Milagai Podi', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK019'),
+('SPL Garlic Idli Podi', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK083'),
+('Fennel Powder (Sombu Podi)', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK049'),
+('SPL ENDO 5 Chilli Powder', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK065'),
+('TEJA Chilli Powder', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK042'),
+('Crushed Idli Milagai Podi', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK072H'),
+('Oil Roasted Chilli Powder', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK065A'),
+('Gundu Chilli Powder', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK084'),
+('SPL Chicken 65 Masala', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK059A'),
+('Moringa Masala Podi', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK089'),
+('SPL Vatha Kuzhambu Masala', 1, 0.0, 0.0, 0, 5, 0.0, 'pcs', 'SK090');
+
+-- Masala Ingredients (Category 2)
+INSERT INTO "products" (product_name, category_id, purchase_price, selling_price, stock, minimum_stock, gst, unit, barcode) VALUES
+('Finger Turmeric (Virali Manjal)', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI001'),
+('Red Chilli', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI002'),
+('S10 Chilli', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI003'),
+('ENDO 5 Chilli', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI004'),
+('Gundu Chilli', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI005'),
+('Kashmiri Chilli', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI006'),
+('Teja Chilli', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI007'),
+('Coriander Seeds', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI008'),
+('Black Pepper', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI009'),
+('Cumin Seeds (Jeera)', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI010'),
+('Fennel Seeds (Sombu)', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI011'),
+('Big Mustard Seeds', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI012'),
+('Fenugreek Seeds', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI013'),
+('Garlic', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI014'),
+('Dry Ginger', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI015'),
+('Asafoetida (Perungayam)', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI016'),
+('Salt', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI017'),
+('Cowpeas (Thattapayiru)', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI018'),
+('Red Rice', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI019'),
+('Green Peas', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI020'),
+('Rajma (Kidney Beans)', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI021'),
+('Tamarind', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI022'),
+('Desiccated Coconut', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI023'),
+('Boiled Rice', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI024'),
+('Idli Rice', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI025'),
+('Raw Rice', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI026'),
+('Small Mustard Seeds', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI027'),
+('Rava (Semolina)', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI028'),
+('Maida (All Purpose Flour)', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI029'),
+('Whole Wheat', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI030'),
+('Country Sugar', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI031'),
+('Pearl Millet (Kambu)', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI032'),
+('Ragi (Finger Millet)', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI033'),
+('Black Kavuni Rice', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI034'),
+('Samba Wheat', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI035'),
+('Maize / Corn', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI036'),
+('White Soya Beans', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI037'),
+('Fried Gram (Pottu Kadalai)', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI038'),
+('White Sorghum', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI039'),
+('Green Gram', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI040'),
+('Almonds (Badam)', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI041'),
+('Barley', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI042'),
+('Sago (Javvarisi)', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI043'),
+('Corn Flour', 2, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKMI044');
+
+-- Aroma Masala Ingredients (Category 3)
+INSERT INTO "products" (product_name, category_id, purchase_price, selling_price, stock, minimum_stock, gst, unit, barcode) VALUES
+('Cinnamon Bark', 3, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKAMI01'),
+('Cloves', 3, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKAMI02'),
+('Cardamom', 3, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKAMI03'),
+('Star Anise', 3, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKAMI04'),
+('Nutmeg', 3, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKAMI05'),
+('Mace', 3, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKAMI06'),
+('Biryani Bay Leaf', 3, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKAMI07'),
+('Kapok Buds (Maratti Mokku)', 3, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKAMI08'),
+('China Grass / Agar Agar', 3, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKAMI09'),
+('Poppy Seeds (Kasakasa)', 3, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKAMI10');
+
+-- Flour Varieties (Category 4)
+INSERT INTO "products" (product_name, category_id, purchase_price, selling_price, stock, minimum_stock, gst, unit, barcode) VALUES
+('SPL Health Mix Powder (Sathu Mavu)', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK058'),
+('Gram Flour (Besan)', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK068'),
+('Badam Mix Powder', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0AK'),
+('Green Gram Flour', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0AR'),
+('Raw Rice Flour', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0AC'),
+('Wheat Flour', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0AQ'),
+('Idiyappam Flour', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK078'),
+('Maida Flour', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0AF'),
+('Bajji Mix Flour', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK071'),
+('Adai Mix Flour', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK079'),
+('Ragi Flour', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0AS'),
+('Red Rice Idiyappam Flour', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0AU'),
+('Rava Dosai Mix Flour', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK076'),
+('Kambu Flour', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0AT'),
+('Navadhanyam Dosai Mix Flour', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK080'),
+('Murukku Mix Flour', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK077'),
+('Black Kavuni Rice Flour', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0AY'),
+('Karasev Mix Flour', 4, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK081');
+
+-- Dal Varieties (Category 5)
+INSERT INTO "products" (product_name, category_id, purchase_price, selling_price, stock, minimum_stock, gst, unit, barcode) VALUES
+('Chana Dal', 5, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKDV01'),
+('Toor Dal', 5, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKDV02'),
+('Black Urad Dal', 5, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKDV03'),
+('Whole White Urad Dal', 5, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKDV04'),
+('Split White Urad Dal', 5, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKDV05'),
+('Moong Dal', 5, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKDV06'),
+('Fried Gram', 5, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKDV07'),
+('Chickpeas (Kadalai)', 5, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKDV08'),
+('Green Chickpeas', 5, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKDV09'),
+('Whole Green Gram', 5, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKDV10'),
+('Black Sesame Seeds', 5, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKDV11'),
+('Black Chana (Sundal)', 5, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKDV12'),
+('White Chana (Kabuli)', 5, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKDV13');
+
+-- Cashew Varieties (Category 6)
+INSERT INTO "products" (product_name, category_id, purchase_price, selling_price, stock, minimum_stock, gst, unit, barcode) VALUES
+('Cashew 1/2 (Split)', 6, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKCV01'),
+('Cashew 1/4 (Quarter)', 6, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKCV02'),
+('Cashew 1/8 SPL', 6, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKCV03'),
+('Cashew Kurunai', 6, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKCV04'),
+('PK Whole Cashew', 6, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKCV05'),
+('SW Whole Cashew', 6, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SKCV06');
+
+-- Dry Fruits (Category 7)
+INSERT INTO "products" (product_name, category_id, purchase_price, selling_price, stock, minimum_stock, gst, unit, barcode) VALUES
+('Whole Cashew', 7, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0DF1'),
+('Almonds (Badam)', 7, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0DF2'),
+('Pistachios', 7, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0DF3'),
+('Black Raisins', 7, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0DF4'),
+('Raisins (Dry Grapes)', 7, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0DF5'),
+('Dry Figs', 7, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0DF6'),
+('Dates', 7, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0DF7'),
+('Walnuts', 7, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0DF8'),
+('Salted Pistachios', 7, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0DF9'),
+('Pumpkin Seeds', 7, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0DF10'),
+('Watermelon Seeds', 7, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0DF11'),
+('Sunflower Seeds', 7, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK0DF12'),
+('Dry Fruits Mixture', 7, 0.0, 0.0, 0, 5, 0.0, 'kg', 'SK088');
 
 CREATE TABLE sales (
     sale_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -167,56 +221,9 @@ CREATE TABLE sales (
     sgst_amount REAL DEFAULT 0,
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
 );
-INSERT INTO "sales" VALUES(1,'INV-0001',4,'2025-03-10 09:59:00',3066.3,0.0,411.4,3477.7,'Card');
-INSERT INTO "sales" VALUES(2,'INV-0002',23,'2025-03-13 12:06:00',1012.21,10.0,90.72,1092.93,'UPI');
-INSERT INTO "sales" VALUES(3,'INV-0003',22,'2025-02-24 10:32:00',1244.86,15.0,184.85,1414.71,'UPI');
-INSERT INTO "sales" VALUES(4,'INV-0004',23,'2025-02-10 15:11:00',2779.56,0.0,344.51,3124.07,'Cash');
-INSERT INTO "sales" VALUES(5,'INV-0005',3,'2025-02-18 16:15:00',2260.47,0.0,336.41,2596.88,'UPI');
-INSERT INTO "sales" VALUES(6,'INV-0006',7,'2025-02-23 13:21:00',1883.6,0.0,226.03,2109.63,'Cash');
-INSERT INTO "sales" VALUES(7,'INV-0007',24,'2025-02-27 16:35:00',3736.92,5.0,586.08,4318.0,'UPI');
-INSERT INTO "sales" VALUES(8,'INV-0008',1,'2025-02-06 13:14:00',3880.06,10.0,465.6,4335.66,'UPI');
-INSERT INTO "sales" VALUES(9,'INV-0009',14,'2025-03-08 14:22:00',2444.04,0.0,293.29,2737.33,'Card');
-INSERT INTO "sales" VALUES(10,'INV-0010',18,'2025-03-17 11:12:00',1673.39,20.0,210.2,1863.59,'Card');
-INSERT INTO "sales" VALUES(11,'INV-0011',20,'2025-02-19 10:53:00',1651.88,0.0,198.22,1850.1,'Cash');
-INSERT INTO "sales" VALUES(12,'INV-0012',23,'2025-03-07 11:17:00',254.45,0.0,12.72,267.17,'Card');
-INSERT INTO "sales" VALUES(13,'INV-0013',5,'2025-03-13 16:06:00',636.66,5.0,76.4,708.06,'UPI');
-INSERT INTO "sales" VALUES(14,'INV-0014',15,'2025-02-22 11:03:00',1844.02,10.0,105.77,1939.79,'Card');
-INSERT INTO "sales" VALUES(15,'INV-0015',22,'2025-02-04 11:09:00',5290.61,20.0,468.15,5738.76,'Card');
-INSERT INTO "sales" VALUES(16,'INV-0016',13,'2025-03-01 16:19:00',2914.51,0.0,275.98,3190.49,'UPI');
-INSERT INTO "sales" VALUES(17,'INV-0017',22,'2025-02-06 11:15:00',304.15,5.0,34.67,333.82,'UPI');
-INSERT INTO "sales" VALUES(18,'INV-0018',23,'2025-03-11 16:18:00',1153.56,15.0,138.43,1276.99,'UPI');
-INSERT INTO "sales" VALUES(19,'INV-0019',23,'2025-03-02 10:43:00',1440.15,20.0,172.81,1592.96,'Cash');
-INSERT INTO "sales" VALUES(20,'INV-0020',14,'2025-02-08 17:14:00',358.69,0.0,32.44,391.13,'UPI');
-INSERT INTO "sales" VALUES(21,'INV-0021',20,'2025-03-09 13:28:00',542.4,0.0,97.63,640.03,'Card');
-INSERT INTO "sales" VALUES(22,'INV-0022',13,'2025-02-18 17:34:00',4444.13,0.0,448.43,4892.56,'Cash');
-INSERT INTO "sales" VALUES(23,'INV-0023',3,'2025-02-15 19:53:00',3396.35,5.0,404.72,3796.07,'UPI');
-INSERT INTO "sales" VALUES(24,'INV-0024',6,'2025-03-10 15:40:00',1841.94,20.0,281.12,2103.06,'Cash');
-INSERT INTO "sales" VALUES(25,'INV-0025',11,'2025-02-27 20:31:00',1268.32,0.0,203.91,1472.23,'UPI');
-INSERT INTO "sales" VALUES(26,'INV-0026',11,'2025-02-08 15:55:00',3337.93,20.0,539.42,3857.35,'UPI');
-INSERT INTO "sales" VALUES(27,'INV-0027',21,'2025-03-01 09:13:00',2409.72,0.0,182.92,2592.64,'Cash');
-INSERT INTO "sales" VALUES(28,'INV-0028',21,'2025-03-11 12:45:00',741.94,5.0,89.03,825.97,'Cash');
-INSERT INTO "sales" VALUES(29,'INV-0029',8,'2025-02-08 16:07:00',1977.73,0.0,250.05,2227.78,'UPI');
-INSERT INTO "sales" VALUES(30,'INV-0030',16,'2025-03-03 12:29:00',2839.93,0.0,358.32,3198.25,'Card');
-INSERT INTO "sales" VALUES(31,'INV-0031',9,'2025-02-01 13:46:00',1393.42,10.0,167.21,1550.63,'UPI');
-INSERT INTO "sales" VALUES(32,'INV-0032',12,'2025-02-22 17:48:00',4196.74,0.0,625.05,4821.79,'Card');
-INSERT INTO "sales" VALUES(33,'INV-0033',16,'2025-03-18 15:24:00',1338.87,10.0,77.97,1406.84,'UPI');
-INSERT INTO "sales" VALUES(34,'INV-0034',4,'2025-03-01 10:33:00',2098.22,0.0,222.6,2320.82,'Card');
-INSERT INTO "sales" VALUES(35,'INV-0035',23,'Nithya Sharma','2025-02-26 19:05:00',3043.95,20.0,503.11,3527.06,'UPI');
-INSERT INTO "sales" VALUES(36,'INV-2026-001',1,'Rajesh Pillai','2026-07-28 10:15:00',1250.0,0.0,62.5,1312.5,'Cash');
-INSERT INTO "sales" VALUES(37,'INV-2026-002',2,'Divya Nair','2026-07-28 11:30:00',850.0,0.0,42.5,892.5,'UPI');
-INSERT INTO "sales" VALUES(38,'INV-2026-003',4,'Praveen Iyer','2026-07-28 14:20:00',2100.0,0.0,105.0,2205.0,'Card');
-INSERT INTO "sales" VALUES(39,'INV-2026-004',5,'Uma Nair','2026-07-28 16:45:00',450.0,0.0,22.5,472.5,'Cash');
-INSERT INTO "sales" VALUES(40,'INV-2026-005',7,'Arun Babu','2026-07-27 09:40:00',1600.0,0.0,80.0,1680.0,'UPI');
-INSERT INTO "sales" VALUES(41,'INV-2026-006',10,'Swathi Raj','2026-07-27 13:10:00',980.0,0.0,49.0,1029.0,'Cash');
-INSERT INTO "sales" VALUES(42,'INV-2026-007',12,'Manoj Nair','2026-07-27 17:50:00',3100.0,0.0,155.0,3255.0,'Card');
-INSERT INTO "sales" VALUES(43,'INV-2026-008',14,'Nithya Menon','2026-07-25 11:00:00',1420.0,0.0,71.0,1491.0,'UPI');
-INSERT INTO "sales" VALUES(44,'INV-2026-009',18,'Kavitha Kumar','2026-07-24 15:30:00',890.0,0.0,44.5,934.5,'Cash');
-INSERT INTO "sales" VALUES(45,'INV-2026-010',20,'Karthik Sharma','2026-07-22 12:15:00',2650.0,0.0,132.5,2782.5,'Card');
-INSERT INTO "sales" VALUES(46,'INV-2026-011',22,'Meena Menon','2026-07-15 10:00:00',1750.0,0.0,87.5,1837.5,'UPI');
-INSERT INTO "sales" VALUES(47,'INV-2026-012',23,'Nithya Sharma','2026-07-10 14:40:00',990.0,0.0,49.5,1039.5,'Cash');
 
 CREATE TABLE sale_items (
-    sale_item_id INTEGER PRIMARY KEY,
+    sale_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
     sale_id INTEGER,
     product_id INTEGER,
     quantity REAL,
@@ -225,137 +232,15 @@ CREATE TABLE sale_items (
     FOREIGN KEY (sale_id) REFERENCES sales(sale_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
-INSERT INTO "sale_items" VALUES(1,1,74,4.0,212.22,848.88);
-INSERT INTO "sale_items" VALUES(2,1,87,6.0,248.91,1493.46);
-INSERT INTO "sale_items" VALUES(3,1,49,2.0,361.98,723.96);
-INSERT INTO "sale_items" VALUES(4,2,88,5.0,102.74,513.7);
-INSERT INTO "sale_items" VALUES(5,2,77,1.0,59.31,59.31);
-INSERT INTO "sale_items" VALUES(6,2,16,3.0,146.4,439.2);
-INSERT INTO "sale_items" VALUES(7,3,2,1.0,301.79,301.79);
-INSERT INTO "sale_items" VALUES(8,3,54,4.0,14.33,57.32);
-INSERT INTO "sale_items" VALUES(9,3,63,3.0,295.25,885.75);
-INSERT INTO "sale_items" VALUES(10,4,84,4.0,316.27,1265.08);
-INSERT INTO "sale_items" VALUES(11,4,35,4.0,207.18,828.72);
-INSERT INTO "sale_items" VALUES(12,4,79,6.0,83.84,503.04);
-INSERT INTO "sale_items" VALUES(13,4,69,5.0,20.89,104.45);
-INSERT INTO "sale_items" VALUES(14,4,62,3.0,26.09,78.27);
-INSERT INTO "sale_items" VALUES(15,5,73,3.0,80.39,241.17);
-INSERT INTO "sale_items" VALUES(16,5,79,1.0,83.84,83.84);
-INSERT INTO "sale_items" VALUES(17,5,86,4.0,212.38,849.52);
-INSERT INTO "sale_items" VALUES(18,5,49,3.0,361.98,1085.94);
-INSERT INTO "sale_items" VALUES(19,6,77,1.0,59.31,59.31);
-INSERT INTO "sale_items" VALUES(20,6,36,5.0,303.37,1516.85);
-INSERT INTO "sale_items" VALUES(21,6,72,2.0,153.72,307.44);
-INSERT INTO "sale_items" VALUES(22,7,89,6.0,240.47,1442.82);
-INSERT INTO "sale_items" VALUES(23,7,61,6.0,382.35,2294.1);
-INSERT INTO "sale_items" VALUES(24,8,89,5.0,240.47,1202.35);
-INSERT INTO "sale_items" VALUES(25,8,32,3.0,384.4,1153.2);
-INSERT INTO "sale_items" VALUES(26,8,40,4.0,46.69,186.76);
-INSERT INTO "sale_items" VALUES(27,8,85,5.0,267.55,1337.75);
-INSERT INTO "sale_items" VALUES(28,9,35,1.0,207.18,207.18);
-INSERT INTO "sale_items" VALUES(29,9,40,6.0,46.69,280.14);
-INSERT INTO "sale_items" VALUES(30,9,33,2.0,401.58,803.16);
-INSERT INTO "sale_items" VALUES(31,9,30,3.0,384.52,1153.56);
-INSERT INTO "sale_items" VALUES(32,10,62,6.0,26.09,156.54);
-INSERT INTO "sale_items" VALUES(33,10,36,5.0,303.37,1516.85);
-INSERT INTO "sale_items" VALUES(34,11,38,3.0,294.28,882.84);
-INSERT INTO "sale_items" VALUES(35,11,30,2.0,384.52,769.04);
-INSERT INTO "sale_items" VALUES(36,12,7,5.0,50.89,254.45);
-INSERT INTO "sale_items" VALUES(37,13,74,3.0,212.22,636.66);
-INSERT INTO "sale_items" VALUES(38,14,62,4.0,26.09,104.36);
-INSERT INTO "sale_items" VALUES(39,14,15,4.0,351.38,1405.52);
-INSERT INTO "sale_items" VALUES(40,14,9,1.0,334.14,334.14);
-INSERT INTO "sale_items" VALUES(41,15,39,4.0,169.88,679.52);
-INSERT INTO "sale_items" VALUES(42,15,11,5.0,329.93,1649.65);
-INSERT INTO "sale_items" VALUES(43,15,32,5.0,384.4,1922.0);
-INSERT INTO "sale_items" VALUES(44,15,16,5.0,146.4,732.0);
-INSERT INTO "sale_items" VALUES(45,15,72,2.0,153.72,307.44);
-INSERT INTO "sale_items" VALUES(46,16,55,5.0,86.36,431.8);
-INSERT INTO "sale_items" VALUES(47,16,40,6.0,46.69,280.14);
-INSERT INTO "sale_items" VALUES(48,16,73,1.0,80.39,80.39);
-INSERT INTO "sale_items" VALUES(49,16,80,2.0,349.16,698.32);
-INSERT INTO "sale_items" VALUES(50,16,8,6.0,237.31,1423.86);
-INSERT INTO "sale_items" VALUES(51,17,71,2.0,139.05,278.1);
-INSERT INTO "sale_items" VALUES(52,17,10,1.0,26.05,26.05);
-INSERT INTO "sale_items" VALUES(53,18,30,3.0,384.52,1153.56);
-INSERT INTO "sale_items" VALUES(54,19,34,5.0,93.99,469.95);
-INSERT INTO "sale_items" VALUES(55,19,81,6.0,161.7,970.2);
-INSERT INTO "sale_items" VALUES(56,20,35,1.0,207.18,207.18);
-INSERT INTO "sale_items" VALUES(57,20,19,1.0,151.51,151.51);
-INSERT INTO "sale_items" VALUES(58,21,60,6.0,90.4,542.4);
-INSERT INTO "sale_items" VALUES(59,22,57,4.0,411.08,1644.32);
-INSERT INTO "sale_items" VALUES(60,22,11,6.0,329.93,1979.58);
-INSERT INTO "sale_items" VALUES(61,22,77,3.0,59.31,177.93);
-INSERT INTO "sale_items" VALUES(62,22,6,5.0,128.46,642.3);
-INSERT INTO "sale_items" VALUES(63,23,76,1.0,50.77,50.77);
-INSERT INTO "sale_items" VALUES(64,23,3,2.0,20.36,40.72);
-INSERT INTO "sale_items" VALUES(65,23,87,4.0,248.91,995.64);
-INSERT INTO "sale_items" VALUES(66,23,35,5.0,207.18,1035.9);
-INSERT INTO "sale_items" VALUES(67,23,74,6.0,212.22,1273.32);
-INSERT INTO "sale_items" VALUES(68,24,12,3.0,69.73,209.19);
-INSERT INTO "sale_items" VALUES(69,24,61,3.0,382.35,1147.05);
-INSERT INTO "sale_items" VALUES(70,24,45,6.0,64.52,387.12);
-INSERT INTO "sale_items" VALUES(71,24,53,1.0,98.58,98.58);
-INSERT INTO "sale_items" VALUES(72,25,85,1.0,267.55,267.55);
-INSERT INTO "sale_items" VALUES(73,25,52,4.0,215.43,861.72);
-INSERT INTO "sale_items" VALUES(74,25,71,1.0,139.05,139.05);
-INSERT INTO "sale_items" VALUES(75,26,1,1.0,225.38,225.38);
-INSERT INTO "sale_items" VALUES(76,26,85,2.0,267.55,535.1);
-INSERT INTO "sale_items" VALUES(77,26,70,5.0,362.67,1813.35);
-INSERT INTO "sale_items" VALUES(78,26,60,3.0,90.4,271.2);
-INSERT INTO "sale_items" VALUES(79,26,53,5.0,98.58,492.9);
-INSERT INTO "sale_items" VALUES(80,27,71,4.0,139.05,556.2);
-INSERT INTO "sale_items" VALUES(81,27,17,6.0,252.96,1517.76);
-INSERT INTO "sale_items" VALUES(82,27,37,4.0,83.94,335.76);
-INSERT INTO "sale_items" VALUES(83,28,40,1.0,46.69,46.69);
-INSERT INTO "sale_items" VALUES(84,28,71,5.0,139.05,695.25);
-INSERT INTO "sale_items" VALUES(85,29,64,5.0,42.41,212.05);
-INSERT INTO "sale_items" VALUES(86,29,38,6.0,294.28,1765.68);
-INSERT INTO "sale_items" VALUES(87,30,19,6.0,151.51,909.06);
-INSERT INTO "sale_items" VALUES(88,30,50,2.0,32.78,65.56);
-INSERT INTO "sale_items" VALUES(89,30,25,1.0,184.66,184.66);
-INSERT INTO "sale_items" VALUES(90,30,77,3.0,59.31,177.93);
-INSERT INTO "sale_items" VALUES(91,30,66,4.0,375.68,1502.72);
-INSERT INTO "sale_items" VALUES(92,31,76,4.0,50.77,203.08);
-INSERT INTO "sale_items" VALUES(93,31,75,2.0,60.07,120.14);
-INSERT INTO "sale_items" VALUES(94,31,85,4.0,267.55,1070.2);
-INSERT INTO "sale_items" VALUES(95,32,49,5.0,361.98,1809.9);
-INSERT INTO "sale_items" VALUES(96,32,59,4.0,268.99,1075.96);
-INSERT INTO "sale_items" VALUES(97,32,42,2.0,115.5,231.0);
-INSERT INTO "sale_items" VALUES(98,32,25,4.0,184.66,738.64);
-INSERT INTO "sale_items" VALUES(99,32,31,1.0,341.24,341.24);
-INSERT INTO "sale_items" VALUES(100,33,64,2.0,42.41,84.82);
-INSERT INTO "sale_items" VALUES(101,33,5,5.0,250.81,1254.05);
-INSERT INTO "sale_items" VALUES(102,34,2,2.0,301.79,603.58);
-INSERT INTO "sale_items" VALUES(103,34,19,1.0,151.51,151.51);
-INSERT INTO "sale_items" VALUES(104,34,53,4.0,98.58,394.32);
-INSERT INTO "sale_items" VALUES(105,34,84,3.0,316.27,948.81);
-INSERT INTO "sale_items" VALUES(106,35,87,3.0,248.91,746.73);
-INSERT INTO "sale_items" VALUES(107,35,69,6.0,20.89,125.34);
-INSERT INTO "sale_items" VALUES(108,35,49,6.0,361.98,2171.88);
-INSERT INTO "sale_items" VALUES(109,36,1,2.0,225.38,450.76);
-INSERT INTO "sale_items" VALUES(110,36,15,2.0,351.38,702.76);
-INSERT INTO "sale_items" VALUES(111,37,26,4.0,83.40,333.60);
-INSERT INTO "sale_items" VALUES(112,37,18,3.0,105.50,316.50);
-INSERT INTO "sale_items" VALUES(113,38,49,4.0,361.98,1447.92);
-INSERT INTO "sale_items" VALUES(114,38,71,3.0,139.05,417.15);
-INSERT INTO "sale_items" VALUES(115,39,12,4.0,69.73,278.92);
-INSERT INTO "sale_items" VALUES(116,40,8,4.0,237.31,949.24);
-INSERT INTO "sale_items" VALUES(117,40,16,4.0,146.40,585.60);
-INSERT INTO "sale_items" VALUES(118,41,52,3.0,215.43,646.29);
-INSERT INTO "sale_items" VALUES(119,42,57,5.0,411.08,2055.40);
-INSERT INTO "sale_items" VALUES(120,43,32,3.0,384.40,1153.20);
-INSERT INTO "sale_items" VALUES(121,44,74,3.0,212.22,636.66);
-INSERT INTO "sale_items" VALUES(122,45,61,5.0,382.35,1911.75);
-INSERT INTO "sale_items" VALUES(123,46,17,5.0,252.96,1264.80);
-INSERT INTO "sale_items" VALUES(124,47,7,10.0,50.89,508.90);
 
 CREATE TABLE settings (
+    settings_id INTEGER PRIMARY KEY AUTOINCREMENT,
     shop_name TEXT,
     address TEXT,
     phone TEXT,
     gst_number TEXT,
     invoice_prefix TEXT
 );
-INSERT INTO "settings" VALUES('SK Masala','Mullai Street, Sanjeevi Nagar','0422-2345678','33ABCDE1234F1Z5','INV');
+
+INSERT INTO "settings" VALUES(1,'SK TRADERS','Mullai Street, Sanjeevi Nagar','0422-2345678','33ABCDE1234F1Z5','INV');
 ''';

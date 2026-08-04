@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/settings_provider.dart';
 import '../providers/theme_provider.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'billing/billing_screen.dart';
@@ -30,7 +29,6 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final settings = context.watch<SettingsProvider>().settings;
     final themeProvider = context.watch<ThemeProvider>();
 
     return Scaffold(
@@ -57,21 +55,22 @@ class _MainScreenState extends State<MainScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'SmartBill',
+                        'SK TRADERS',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
                           letterSpacing: 0.5,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        settings?.shopName ?? 'SK Masala',
-                        style: const TextStyle(
+                      const SizedBox(height: 4),
+                      const Text(
+                        'SmartBill',
+                        style: TextStyle(
                           color: Color(0xE6FFFFFF),
-                          fontSize: 13.5,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w500,
+                          letterSpacing: 0.3,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

@@ -49,7 +49,7 @@ class SmartBillApp extends StatelessWidget {
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return MaterialApp(
-            title: 'SmartBill - SK Masala',
+            title: 'SK TRADERS - SmartBill',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,

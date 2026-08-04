@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/customer_provider.dart';
@@ -153,17 +154,41 @@ class _BillingScreenState extends State<BillingScreen> {
       customerPhone = _walkInPhoneController.text.trim();
       customerAddress = _walkInAddressController.text.trim();
 
-      if (customerName.isEmpty) {
-        customerName = 'Walk-in Customer';
+      if (customerPhone.isNotEmpty) {
+        final phoneDigits = customerPhone.replaceAll(RegExp(r'\D'), '');
+        if (phoneDigits.length != 10) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Phone number must be exactly 10 digits!'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
       }
 
       if (_saveCustomerForFuture) {
+        final phoneDigits = customerPhone.replaceAll(RegExp(r'\D'), '');
+        if (phoneDigits.length != 10) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('A valid 10-digit phone number is required to save customer for future sales!'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
         final newCust = Customer(
-          customerName: customerName,
+          customerName: customerName.isEmpty ? 'Walk-in Customer' : customerName,
           phone: customerPhone,
           address: customerAddress,
         );
         customerId = await context.read<CustomerProvider>().addCustomer(newCust);
+      }
+
+      if (customerName.isEmpty) {
+        customerName = 'Walk-in Customer';
       }
     } else {
       if (_selectedCustomer == null) {
@@ -236,6 +261,7 @@ class _BillingScreenState extends State<BillingScreen> {
   Widget build(BuildContext context) {
     final customers = context.watch<CustomerProvider>().customers;
     final products = context.watch<ProductProvider>().products;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -267,14 +293,28 @@ class _BillingScreenState extends State<BillingScreen> {
                             Row(
                               children: [
                                 ChoiceChip(
-                                  label: const Text('Existing Customer'),
+                                  label: Text(
+                                    'Existing Customer',
+                                    style: TextStyle(
+                                      color: !_isWalkIn ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                   selected: !_isWalkIn,
+                                  selectedColor: const Color(0xFF00875A),
                                   onSelected: (val) => setState(() => _isWalkIn = !val),
                                 ),
                                 const SizedBox(width: 12),
                                 ChoiceChip(
-                                  label: const Text('Walk-in Customer'),
+                                  label: Text(
+                                    'Walk-in Customer',
+                                    style: TextStyle(
+                                      color: _isWalkIn ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                   selected: _isWalkIn,
+                                  selectedColor: const Color(0xFF00875A),
                                   onSelected: (val) => setState(() => _isWalkIn = val),
                                 ),
                               ],
@@ -282,14 +322,18 @@ class _BillingScreenState extends State<BillingScreen> {
                             const SizedBox(height: 16),
                             if (!_isWalkIn) ...[
                               DropdownButtonFormField<Customer>(
-                                value: _selectedCustomer,
+                                initialValue: _selectedCustomer,
+                                dropdownColor: isDark ? const Color(0xFF1C382B) : Colors.white,
                                 decoration: const InputDecoration(
                                   labelText: 'Select Registered Customer',
                                   prefixIcon: Icon(Icons.person),
                                 ),
                                 items: customers.map((c) => DropdownMenuItem(
                                   value: c,
-                                  child: Text('${c.customerName} (${c.phone ?? "No Phone"})'),
+                                  child: Text(
+                                    '${c.customerName} (${c.phone ?? "No Phone"})',
+                                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                                  ),
                                 )).toList(),
                                 onChanged: (val) => setState(() => _selectedCustomer = val),
                               ),
@@ -310,10 +354,14 @@ class _BillingScreenState extends State<BillingScreen> {
                                     child: TextField(
                                       controller: _walkInPhoneController,
                                       decoration: const InputDecoration(
-                                        labelText: 'Phone Number',
+                                        labelText: 'Phone Number (10 digits)',
                                         prefixIcon: Icon(Icons.phone),
                                       ),
                                       keyboardType: TextInputType.phone,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                        LengthLimitingTextInputFormatter(10),
+                                      ],
                                     ),
                                   ),
                                 ],
@@ -388,6 +436,7 @@ class _BillingScreenState extends State<BillingScreen> {
                                         alignment: Alignment.topLeft,
                                         child: Material(
                                           elevation: 4,
+                                          color: isDark ? const Color(0xFF1C382B) : Colors.white,
                                           borderRadius: BorderRadius.circular(8),
                                           child: Container(
                                             width: 400,
@@ -400,8 +449,8 @@ class _BillingScreenState extends State<BillingScreen> {
                                                 final Product option = options.elementAt(index);
                                                 final isLow = option.stock <= option.minimumStock;
                                                 return ListTile(
-                                                  title: Text(option.productName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                                  subtitle: Text('Stock: ${option.stock} ${option.unit ?? "pcs"} | Price: ₹${option.sellingPrice}'),
+                                                  title: Text(option.productName, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
+                                                  subtitle: Text('Stock: ${option.stock} ${option.unit ?? "pcs"} | Price: ₹${option.sellingPrice}', style: TextStyle(color: isDark ? Colors.white70 : Colors.grey.shade600)),
                                                   trailing: isLow
                                                       ? const Chip(label: Text('Low Stock', style: TextStyle(color: Colors.white, fontSize: 10)), backgroundColor: Colors.orange)
                                                       : null,
@@ -455,7 +504,10 @@ class _BillingScreenState extends State<BillingScreen> {
           Expanded(
             flex: 4,
             child: Container(
-              color: Colors.white,
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                border: Border(left: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300)),
+              ),
               child: Column(
                 children: [
                   Container(
@@ -470,8 +522,14 @@ class _BillingScreenState extends State<BillingScreen> {
                           style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         Chip(
-                          label: Text('${_cart.length} Items', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00875A))),
-                          backgroundColor: Colors.white,
+                          label: Text(
+                            '${_cart.length} Items',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : const Color(0xFF00875A),
+                            ),
+                          ),
+                          backgroundColor: isDark ? const Color(0xFF064E3B) : Colors.white,
                         ),
                       ],
                     ),
@@ -480,20 +538,20 @@ class _BillingScreenState extends State<BillingScreen> {
                   // Cart List View
                   Expanded(
                     child: _cart.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.shopping_bag_outlined, size: 48, color: Colors.grey),
-                                SizedBox(height: 8),
-                                Text('Cart is empty', style: TextStyle(color: Colors.grey)),
+                                Icon(Icons.shopping_bag_outlined, size: 48, color: isDark ? Colors.white54 : Colors.grey),
+                                const SizedBox(height: 8),
+                                Text('Cart is empty', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey)),
                               ],
                             ),
                           )
                         : ListView.separated(
                             padding: const EdgeInsets.all(12),
                             itemCount: _cart.length,
-                            separatorBuilder: (_, __) => const Divider(height: 1),
+                            separatorBuilder: (_, __) => Divider(height: 1, color: isDark ? Colors.white12 : Colors.grey.shade200),
                             itemBuilder: (context, index) {
                               final item = _cart[index];
                               final productList = products.where((p) => p.productId == item.productId);
@@ -507,8 +565,18 @@ class _BillingScreenState extends State<BillingScreen> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(productName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                          Text('₹${item.price} each', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                                          Text(
+                                            productName,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                              color: isDark ? Colors.white : Colors.black87,
+                                            ),
+                                          ),
+                                          Text(
+                                            '₹${item.price} each',
+                                            style: TextStyle(color: isDark ? Colors.white70 : Colors.grey.shade600, fontSize: 12),
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -516,12 +584,15 @@ class _BillingScreenState extends State<BillingScreen> {
                                     Row(
                                       children: [
                                         IconButton(
-                                          icon: const Icon(Icons.remove_circle_outline, size: 20),
+                                          icon: Icon(Icons.remove_circle_outline, size: 20, color: isDark ? Colors.white70 : Colors.black54),
                                           onPressed: () => _updateQuantity(index, item.quantity - 1),
                                         ),
-                                        Text('${item.quantity}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                        Text(
+                                          '${item.quantity}',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.black87),
+                                        ),
                                         IconButton(
-                                          icon: const Icon(Icons.add_circle_outline, size: 20),
+                                          icon: Icon(Icons.add_circle_outline, size: 20, color: isDark ? Colors.white70 : Colors.black54),
                                           onPressed: () => _updateQuantity(index, item.quantity + 1),
                                         ),
                                       ],
@@ -531,7 +602,7 @@ class _BillingScreenState extends State<BillingScreen> {
                                       width: 80,
                                       child: Text(
                                         '₹${item.total.toStringAsFixed(2)}',
-                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                        style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
                                         textAlign: TextAlign.right,
                                       ),
                                     ),
@@ -550,8 +621,8 @@ class _BillingScreenState extends State<BillingScreen> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      border: Border(top: BorderSide(color: Colors.grey.shade300)),
+                      color: isDark ? const Color(0xFF0B1912) : Colors.grey.shade50,
+                      border: Border(top: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300)),
                     ),
                     child: Column(
                       children: [
@@ -562,7 +633,7 @@ class _BillingScreenState extends State<BillingScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Invoice GST % (Manual):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                Text('Invoice GST % (Manual):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isDark ? Colors.white : Colors.black87)),
                                 SizedBox(
                                   width: 100,
                                   child: TextFormField(
@@ -594,8 +665,9 @@ class _BillingScreenState extends State<BillingScreen> {
                                       label: Text('${rate.toStringAsFixed(0)}%'),
                                       selected: isSelected,
                                       selectedColor: const Color(0xFF00875A),
+                                      backgroundColor: isDark ? const Color(0xFF1C382B) : Colors.grey.shade200,
                                       labelStyle: TextStyle(
-                                        color: isSelected ? Colors.white : Colors.black87,
+                                        color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
                                         fontSize: 11,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -616,10 +688,15 @@ class _BillingScreenState extends State<BillingScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Payment Method:'),
+                            Text('Payment Method:', style: TextStyle(color: isDark ? Colors.white70 : Colors.black87)),
                             DropdownButton<String>(
                               value: _paymentMethod,
-                              items: ['Cash', 'UPI', 'Card'].map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                              dropdownColor: isDark ? const Color(0xFF1C382B) : Colors.white,
+                              style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold),
+                              items: ['Cash', 'UPI', 'Card'].map((m) => DropdownMenuItem(
+                                value: m,
+                                child: Text(m, style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
+                              )).toList(),
                               onChanged: (val) => setState(() => _paymentMethod = val ?? 'Cash'),
                             ),
                           ],
@@ -628,16 +705,16 @@ class _BillingScreenState extends State<BillingScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Subtotal'),
-                            Text('₹${_subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14)),
+                            Text('Subtotal', style: TextStyle(color: isDark ? Colors.white70 : Colors.black87)),
+                            Text('₹${_subtotal.toStringAsFixed(2)}', style: TextStyle(fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Taxable Amount'),
-                            Text('₹${_taxableAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                            Text('Taxable Amount', style: TextStyle(color: isDark ? Colors.white70 : Colors.black87)),
+                            Text('₹${_taxableAmount.toStringAsFixed(2)}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87)),
                           ],
                         ),
                         if (_selectedGstRate > 0) ...[
@@ -645,59 +722,62 @@ class _BillingScreenState extends State<BillingScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('CGST (${_cgstRate.toStringAsFixed(1)}%)'),
-                              Text('₹${_cgstAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                              Text('CGST (${_cgstRate.toStringAsFixed(1)}%)', style: TextStyle(color: isDark ? Colors.white60 : Colors.grey.shade700)),
+                              Text('₹${_cgstAmount.toStringAsFixed(2)}', style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : Colors.grey.shade700)),
                             ],
                           ),
                           const SizedBox(height: 4),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('SGST (${_sgstRate.toStringAsFixed(1)}%)'),
-                              Text('₹${_sgstAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                              Text('SGST (${_sgstRate.toStringAsFixed(1)}%)', style: TextStyle(color: isDark ? Colors.white60 : Colors.grey.shade700)),
+                              Text('₹${_sgstAmount.toStringAsFixed(2)}', style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : Colors.grey.shade700)),
                             ],
                           ),
                           const SizedBox(height: 4),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Total GST (${_selectedGstRate.toStringAsFixed(0)}%)'),
-                              Text('₹${_gst.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF00875A))),
+                              Text('Total GST (${_selectedGstRate.toStringAsFixed(0)}%)', style: TextStyle(color: isDark ? Colors.white70 : Colors.black87)),
+                              Text('₹${_gst.toStringAsFixed(2)}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDark ? const Color(0xFF34D399) : const Color(0xFF00875A))),
                             ],
                           ),
                         ] else ...[
                           const SizedBox(height: 4),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: const [
-                              Text('GST (0%)'),
-                              Text('₹0.00', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                            children: [
+                              Text('GST (0%)', style: TextStyle(color: isDark ? Colors.white60 : Colors.grey.shade700)),
+                              Text('₹0.00', style: TextStyle(fontSize: 14, color: isDark ? Colors.white60 : Colors.grey.shade700)),
                             ],
                           ),
                         ],
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          child: Divider(),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Divider(color: isDark ? Colors.white12 : Colors.grey.shade300),
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Grand Total', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            Text('Grand Total', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
                             Text(
                               '₹${_grandTotal.toStringAsFixed(2)}',
-                              style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900, color: Color(0xFF00875A)),
+                              style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900, color: isDark ? const Color(0xFF34D399) : const Color(0xFF00875A)),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
                         SizedBox(
                           width: double.infinity,
+                          height: 48,
                           child: ElevatedButton.icon(
                             icon: const Icon(Icons.print),
-                            label: const Text('GENERATE & PRINT INVOICE'),
+                            label: const Text('GENERATE & PRINT INVOICE', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 18),
                               backgroundColor: const Color(0xFF00875A),
+                              foregroundColor: Colors.white,
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                             onPressed: _processInvoice,
                           ),

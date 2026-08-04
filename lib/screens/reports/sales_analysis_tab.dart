@@ -356,19 +356,27 @@ class _ToolbarBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedColor = color ?? Theme.of(context).colorScheme.primary;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final resolvedColor = color ?? theme.colorScheme.primary;
+
     if (outline) {
       return OutlinedButton.icon(
-        icon: Icon(icon, size: 15, color: const Color(0xFF00875A)),
+        icon: Icon(icon, size: 15, color: isDark ? const Color(0xFF34D399) : const Color(0xFF00875A)),
         label: Text(
           label,
-          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A)),
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : const Color(0xFF0F172A),
+          ),
         ),
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          side: const BorderSide(color: Color(0xFF00875A)),
+          side: BorderSide(color: isDark ? const Color(0xFF34D399) : const Color(0xFF00875A)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          backgroundColor: isDark ? const Color(0xFF13281E) : Colors.transparent,
         ),
       );
     }
@@ -381,6 +389,7 @@ class _ToolbarBtn extends StatelessWidget {
       onPressed: onTap,
       style: ElevatedButton.styleFrom(
         backgroundColor: resolvedColor,
+        foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         elevation: 1,

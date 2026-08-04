@@ -80,6 +80,8 @@ class AppTheme {
       brightness: Brightness.dark,
       primaryColor: primaryColor,
       scaffoldBackgroundColor: darkBackgroundColor,
+      canvasColor: darkCardColor,
+      cardColor: darkCardColor,
       dividerColor: Colors.white12,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryColor,
@@ -89,11 +91,24 @@ class AppTheme {
         surface: darkCardColor,
         onSurface: Colors.white,
       ),
-      dialogTheme: const DialogThemeData(backgroundColor: darkCardColor),
-      cardColor: darkCardColor,
+      dialogTheme: const DialogThemeData(
+        backgroundColor: darkCardColor,
+        surfaceTintColor: Colors.transparent,
+      ),
       cardTheme: const CardThemeData(
         color: darkCardColor,
+        surfaceTintColor: Colors.transparent,
         elevation: 1,
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: darkInputColor,
+        disabledColor: Colors.white10,
+        selectedColor: primaryColor,
+        secondarySelectedColor: primaryColor,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        labelStyle: const TextStyle(color: Colors.white),
+        secondaryLabelStyle: const TextStyle(color: Colors.white),
+        brightness: Brightness.dark,
       ),
       iconTheme: const IconThemeData(color: Color(0xE6FFFFFF)),
       textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
