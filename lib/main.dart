@@ -21,6 +21,7 @@ void main() async {
   // Initialize FFI for Windows
   if (Platform.isWindows || Platform.isLinux) {
     sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
   }
   
   // Initialize DB and make sure it's created

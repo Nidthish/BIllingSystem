@@ -74,6 +74,11 @@ flutter:
     - assets/fonts/
 
   fonts:
+    - family: MuktaMalar
+      fonts:
+        - asset: assets/fonts/MuktaMalar-Regular.ttf
+        - asset: assets/fonts/MuktaMalar-Bold.ttf
+          weight: 700
     - family: NotoSansTamil
       fonts:
         - asset: assets/fonts/NotoSansTamil-Regular.ttf

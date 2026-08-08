@@ -15,6 +15,7 @@ class InvoiceGenerator {
   static pw.MemoryImage? _skLogoImage;
   static pw.MemoryImage? _qrPaymentImage;
   static pw.MemoryImage? _qrLocationImage;
+  static pw.MemoryImage? _productsWeOfferImage;
   static bool _assetsLoaded = false;
 
   static Future<void> preloadAssets() async {
@@ -38,6 +39,10 @@ class InvoiceGenerator {
     try {
       final qrLocBytes = await rootBundle.load('assets/images/qr_location.jpg');
       _qrLocationImage = pw.MemoryImage(qrLocBytes.buffer.asUint8List());
+    } catch (_) {}
+    try {
+      final offerBytes = await rootBundle.load('assets/images/products_we_offer.jpg');
+      _productsWeOfferImage = pw.MemoryImage(offerBytes.buffer.asUint8List());
     } catch (_) {}
     _assetsLoaded = true;
   }
@@ -130,7 +135,7 @@ class InvoiceGenerator {
                       crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
                         if (_skLogoImage != null)
-                          pw.Image(_skLogoImage!, width: 100, height: 44, fit: pw.BoxFit.contain)
+                          pw.Image(_skLogoImage!, width: 115, height: 50, fit: pw.BoxFit.contain)
                         else
                           pw.Container(
                             padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -143,10 +148,9 @@ class InvoiceGenerator {
                               style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontFallback: fallbacks),
                             ),
                           ),
-                        pw.SizedBox(height: 3),
-                        pw.Text('HOTEL STYLE MASALA', style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold, font: fontBold, fontFallback: fallbacks)),
-                        pw.Text('TRADITIONAL CHETTINAD STYLE', style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold, font: fontBold, fontFallback: fallbacks)),
-                        pw.Text('MASALAS', style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold, font: fontBold, fontFallback: fallbacks)),
+                        pw.SizedBox(height: 2),
+                        pw.Text('HOTEL STYLE MASALA', style: pw.TextStyle(fontSize: 6.5, fontWeight: pw.FontWeight.bold, font: fontBold)),
+                        pw.Text('TRADITIONAL CHETTINAD STYLE MASALAS', style: pw.TextStyle(fontSize: 6.5, fontWeight: pw.FontWeight.bold, font: fontBold)),
                       ],
                     ),
                   ),
@@ -406,89 +410,112 @@ class InvoiceGenerator {
                 children: [
                   pw.Expanded(
                     flex: 62,
-                    child: pw.Container(
-                      decoration: pw.BoxDecoration(
-                        border: pw.Border.all(color: primaryGreen, width: 1),
-                        borderRadius: pw.BorderRadius.circular(4),
-                      ),
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Container(
-                            width: double.infinity,
-                            padding: const pw.EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                    child: _productsWeOfferImage != null
+                        ? pw.Container(
+                            height: 62,
+                            alignment: pw.Alignment.centerLeft,
+                            child: pw.Image(
+                              _productsWeOfferImage!,
+                              fit: pw.BoxFit.contain,
+                            ),
+                          )
+                        : pw.Container(
                             decoration: pw.BoxDecoration(
-                              color: primaryGreen,
-                              borderRadius: const pw.BorderRadius.only(
-                                topLeft: pw.Radius.circular(3),
-                                topRight: pw.Radius.circular(3),
-                              ),
+                              border: pw.Border.all(color: primaryGreen, width: 1),
+                              borderRadius: pw.BorderRadius.circular(4),
                             ),
-                            child: pw.Text(
-                              'PRODUCTS WE OFFER :',
-                              style: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 7.5, fontFallback: fallbacks),
-                            ),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            child: pw.Row(
+                            child: pw.Column(
                               crossAxisAlignment: pw.CrossAxisAlignment.start,
                               children: [
-                                pw.Expanded(
-                                  child: pw.Column(
-                                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                                    children: [
-                                      _buildOfferBullet('மசாலா வகைகள்', fontReg, fallbacks),
-                                      _buildOfferBullet('மசாலா மூலப்பொருட்கள்', fontReg, fallbacks),
-                                      _buildOfferBullet('மாவு வகைகள்', fontReg, fallbacks),
-                                      _buildOfferBullet('பருப்பு வகைகள்', fontReg, fallbacks),
-                                    ],
+                                pw.Container(
+                                  width: double.infinity,
+                                  padding: const pw.EdgeInsets.symmetric(vertical: 3.5, horizontal: 8),
+                                  decoration: pw.BoxDecoration(
+                                    color: primaryGreen,
+                                    borderRadius: const pw.BorderRadius.only(
+                                      topLeft: pw.Radius.circular(3),
+                                      topRight: pw.Radius.circular(3),
+                                    ),
+                                  ),
+                                  child: pw.Text(
+                                    'PRODUCTS WE OFFER :',
+                                    style: pw.TextStyle(
+                                      color: PdfColors.white,
+                                      fontWeight: pw.FontWeight.bold,
+                                      fontSize: 8.5,
+                                      font: fontBold,
+                                    ),
                                   ),
                                 ),
-                                pw.Expanded(
-                                  child: pw.Column(
+                                pw.Padding(
+                                  padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  child: pw.Row(
                                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                                     children: [
-                                      _buildOfferBullet('முந்திரி வகைகள்', fontReg, fallbacks),
-                                      _buildOfferBullet('உலர் பழ வகைகள்', fontReg, fallbacks),
-                                      _buildOfferBullet('வாசனை மசாலா பொருட்கள்', fontReg, fallbacks),
+                                      pw.Expanded(
+                                        child: pw.Column(
+                                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                          children: [
+                                            _buildOfferBullet('மசாலா வகைகள்', fontBold, fallbacks),
+                                            _buildOfferBullet('மசாலா மூலப்பொருட்கள்', fontBold, fallbacks),
+                                            _buildOfferBullet('மாவு வகைகள்', fontBold, fallbacks),
+                                            _buildOfferBullet('பருப்பு வகைகள்', fontBold, fallbacks),
+                                          ],
+                                        ),
+                                      ),
+                                      pw.Expanded(
+                                        child: pw.Column(
+                                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                          children: [
+                                            _buildOfferBullet('முந்திரி வகைகள்', fontBold, fallbacks),
+                                            _buildOfferBullet('உலர் பழ வகைகள்', fontBold, fallbacks),
+                                            _buildOfferBullet('வாசனை மசாலா பொருட்கள்', fontBold, fallbacks),
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
                   ),
                   pw.SizedBox(width: 12),
 
                   pw.Expanded(
                     flex: 38,
-                    child: pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.center,
-                      mainAxisAlignment: pw.MainAxisAlignment.end,
-                      children: [
-                        pw.SizedBox(height: 6),
-                        pw.Text(
-                          'FOR ${settings.shopName.isEmpty ? 'MS TRADERS' : settings.shopName.toUpperCase()}',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5, font: fontBold, fontFallback: fallbacks),
-                        ),
-                        pw.SizedBox(height: 22),
-                        pw.Container(
-                          width: 130,
-                          child: pw.Text(
-                            '--------------------------------------------',
-                            style: pw.TextStyle(fontSize: 7, color: PdfColors.grey700, fontFallback: fallbacks),
-                            maxLines: 1,
+                    child: pw.Container(
+                      height: 62,
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.center,
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text(
+                            'FOR ${settings.shopName.isEmpty ? 'MS TRADERS' : settings.shopName.toUpperCase()}',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5, font: fontBold),
+                            textAlign: pw.TextAlign.center,
                           ),
-                        ),
-                        pw.Text(
-                          'AUTHORIZED SIGNATURE',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 7.5, font: fontBold, fontFallback: fallbacks),
-                        ),
-                      ],
+                          pw.Column(
+                            children: [
+                              pw.Container(
+                                width: 120,
+                                child: pw.Text(
+                                  '----------------------------------------',
+                                  style: pw.TextStyle(fontSize: 7, color: PdfColors.grey700),
+                                  textAlign: pw.TextAlign.center,
+                                  maxLines: 1,
+                                ),
+                              ),
+                              pw.SizedBox(height: 1),
+                              pw.Text(
+                                'AUTHORIZED SIGNATURE',
+                                style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 7.5, font: fontBold),
+                                textAlign: pw.TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -527,10 +554,13 @@ class InvoiceGenerator {
     // Send SAME exact bytes to system print dialog
     try {
       await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdfBytes,
+        onLayout: (PdfPageFormat format) => pdfBytes,
         name: 'Invoice_${sale.invoiceNo}',
       );
-    } catch (_) {}
+    } catch (e) {
+      // Log any layout print errors
+      print('Printing layout error: $e');
+    }
   }
 
   // --- Helper Widgets ---
@@ -588,13 +618,15 @@ class InvoiceGenerator {
     );
   }
 
-  static pw.Widget _buildOfferBullet(String text, pw.Font font, List<pw.Font> fallbacks) {
+  static pw.Widget _buildOfferBullet(String text, pw.Font defaultFont, List<pw.Font> fallbacks) {
+    final primaryTamilFont = _tamilFontBold ?? _tamilFontRegular ?? defaultFont;
     return pw.Padding(
-      padding: const pw.EdgeInsets.only(bottom: 1.5),
+      padding: const pw.EdgeInsets.only(bottom: 3.5),
       child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
         children: [
-          pw.Text('- ', style: pw.TextStyle(fontSize: 7, font: font, fontFallback: fallbacks)),
-          pw.Text(text, style: pw.TextStyle(fontSize: 7, font: font, fontFallback: fallbacks)),
+          pw.Text('> ', style: pw.TextStyle(fontSize: 8.5, font: defaultFont, fontWeight: pw.FontWeight.bold)),
+          pw.Text(text, style: pw.TextStyle(fontSize: 8.5, font: primaryTamilFont, fontWeight: pw.FontWeight.bold)),
         ],
       ),
     );

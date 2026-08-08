@@ -9,6 +9,7 @@ import '../../models/product.dart';
 import '../../models/customer.dart';
 import '../../models/sale.dart';
 import '../../models/sale_item.dart';
+import '../../models/settings.dart';
 import '../../utils/invoice_generator.dart';
 
 class BillingScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class BillingScreen extends StatefulWidget {
 class _BillingScreenState extends State<BillingScreen> {
   bool _isWalkIn = false;
   bool _saveCustomerForFuture = false;
+  bool _isProcessing = false;
 
   Customer? _selectedCustomer;
   final TextEditingController _walkInNameController = TextEditingController();
@@ -35,6 +37,13 @@ class _BillingScreenState extends State<BillingScreen> {
   final List<SaleItem> _cart = [];
   String _paymentMethod = 'Cash';
   double _selectedGstRate = 5.0; // Manual invoice GST rate
+
+  @override
+  void initState() {
+    super.initState();
+    // Preload PDF fonts & images early so printing opens instantly
+    InvoiceGenerator.preloadAssets();
+  }
 
   void _addToCart() {
     if (_selectedProduct == null) {
@@ -139,6 +148,8 @@ class _BillingScreenState extends State<BillingScreen> {
   double get _grandTotal => _taxableAmount + _gst;
 
   Future<void> _processInvoice() async {
+    if (_isProcessing) return;
+
     if (_cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cart is empty! Add products first.')));
       return;
@@ -201,68 +212,101 @@ class _BillingScreenState extends State<BillingScreen> {
       customerAddress = _selectedCustomer!.address ?? '';
     }
 
-    final settings = context.read<SettingsProvider>().settings;
-    String prefix = settings?.invoicePrefix ?? 'INV';
-    String invoiceNo = '$prefix-${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}';
-
-    Sale sale = Sale(
-      invoiceNo: invoiceNo,
-      customerId: customerId,
-      customerName: customerName,
-      date: DateTime.now().toIso8601String(),
-      subtotal: _subtotal,
-      discount: _discount,
-      gst: _gst,
-      grandTotal: _grandTotal,
-      paymentMethod: _paymentMethod,
-      gstRate: _selectedGstRate,
-      cgstRate: _cgstRate,
-      sgstRate: _sgstRate,
-      taxableAmount: _taxableAmount,
-      cgstAmount: _cgstAmount,
-      sgstAmount: _sgstAmount,
-    );
-
-    // Save sale to DB & decrease stock
-    final messenger = ScaffoldMessenger.of(context);
-    final salesProvider = context.read<SalesProvider>();
-    final productProvider = context.read<ProductProvider>();
-
-    final cartCopy = List<SaleItem>.from(_cart);
-
-    await salesProvider.createSale(sale, _cart);
-    await productProvider.loadProducts(); // Refresh live stock in state
-
-    if (!mounted) return;
-
-    messenger.showSnackBar(
-      SnackBar(content: Text('Invoice $invoiceNo created! Saved to Invoices folder & sent to printer.')),
-    );
-
-    // Generate & Print Invoice PDF
-    await InvoiceGenerator.generateAndPrintInvoice(
-      sale: sale,
-      items: cartCopy,
-      customerName: customerName,
-      customerPhone: customerPhone,
-      customerAddress: customerAddress,
-      customerGst: _selectedCustomer?.gstNumber,
-      settings: settings!,
-      allProducts: productProvider.products,
-    );
-
-    if (!mounted) return;
-
-    // Clear form
     setState(() {
-      _cart.clear();
-      _selectedCustomer = null;
-      _walkInNameController.clear();
-      _walkInPhoneController.clear();
-      _walkInAddressController.clear();
-      _saveCustomerForFuture = false;
+      _isProcessing = true;
     });
 
+    try {
+      final settingsProvider = context.read<SettingsProvider>();
+      var rawSettings = settingsProvider.settings;
+      if (rawSettings == null) {
+        await settingsProvider.loadSettings();
+        rawSettings = settingsProvider.settings;
+      }
+      final Settings activeSettings = rawSettings ?? Settings(
+        shopName: 'MS TRADERS',
+        address: '138, Mullai Street, Sanjeevi Nagar,\nTiruchirappalli - 620002, Tamil Nadu, India.',
+        phone: '7708906866',
+        gstNumber: '33ABCDE1234F1Z5',
+        invoicePrefix: 'INV',
+      );
+
+      String prefix = activeSettings.invoicePrefix;
+      String invoiceNo = '$prefix-${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}';
+
+      Sale sale = Sale(
+        invoiceNo: invoiceNo,
+        customerId: customerId,
+        customerName: customerName,
+        date: DateTime.now().toIso8601String(),
+        subtotal: _subtotal,
+        discount: _discount,
+        gst: _gst,
+        grandTotal: _grandTotal,
+        paymentMethod: _paymentMethod,
+        gstRate: _selectedGstRate,
+        cgstRate: _cgstRate,
+        sgstRate: _sgstRate,
+        taxableAmount: _taxableAmount,
+        cgstAmount: _cgstAmount,
+        sgstAmount: _sgstAmount,
+      );
+
+      // Save sale to DB & decrease stock
+      final messenger = ScaffoldMessenger.of(context);
+      final salesProvider = context.read<SalesProvider>();
+      final productProvider = context.read<ProductProvider>();
+
+      final cartCopy = List<SaleItem>.from(_cart);
+
+      await salesProvider.createSale(sale, _cart);
+      await productProvider.loadProducts(); // Refresh live stock in state
+
+      if (!mounted) return;
+
+      messenger.showSnackBar(
+        SnackBar(content: Text('Invoice $invoiceNo created! Saved to Invoices folder & sent to printer.')),
+      );
+
+      // Generate & Print Invoice PDF
+      await InvoiceGenerator.generateAndPrintInvoice(
+        sale: sale,
+        items: cartCopy,
+        customerName: customerName,
+        customerPhone: customerPhone,
+        customerAddress: customerAddress,
+        customerGst: _selectedCustomer?.gstNumber,
+        settings: activeSettings,
+        allProducts: productProvider.products,
+      );
+
+      if (!mounted) return;
+
+      // Clear form
+      setState(() {
+        _cart.clear();
+        _selectedCustomer = null;
+        _walkInNameController.clear();
+        _walkInPhoneController.clear();
+        _walkInAddressController.clear();
+        _saveCustomerForFuture = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error generating invoice: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
   }
 
   @override
@@ -779,15 +823,26 @@ class _BillingScreenState extends State<BillingScreen> {
                           width: double.infinity,
                           height: 48,
                           child: ElevatedButton.icon(
-                            icon: const Icon(Icons.print),
-                            label: const Text('GENERATE & PRINT INVOICE', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                            icon: _isProcessing
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                                  )
+                                : const Icon(Icons.print),
+                            label: Text(
+                              _isProcessing ? 'PROCESSING INVOICE...' : 'GENERATE & PRINT INVOICE',
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF00875A),
                               foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey.shade400,
+                              disabledForegroundColor: Colors.white70,
                               elevation: 2,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                            onPressed: _processInvoice,
+                            onPressed: _isProcessing ? null : _processInvoice,
                           ),
                         ),
                       ],
