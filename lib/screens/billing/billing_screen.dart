@@ -224,20 +224,25 @@ class _BillingScreenState extends State<BillingScreen> {
     );
 
     // Save sale to DB & decrease stock
+    final messenger = ScaffoldMessenger.of(context);
     final salesProvider = context.read<SalesProvider>();
     final productProvider = context.read<ProductProvider>();
+
+    final cartCopy = List<SaleItem>.from(_cart);
 
     await salesProvider.createSale(sale, _cart);
     await productProvider.loadProducts(); // Refresh live stock in state
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Invoice $invoiceNo created! Generating PDF...')),
+    if (!mounted) return;
+
+    messenger.showSnackBar(
+      SnackBar(content: Text('Invoice $invoiceNo created! Saved to Invoices folder & sent to printer.')),
     );
 
     // Generate & Print Invoice PDF
     await InvoiceGenerator.generateAndPrintInvoice(
       sale: sale,
-      items: _cart,
+      items: cartCopy,
       customerName: customerName,
       customerPhone: customerPhone,
       customerAddress: customerAddress,
@@ -245,6 +250,8 @@ class _BillingScreenState extends State<BillingScreen> {
       settings: settings!,
       allProducts: productProvider.products,
     );
+
+    if (!mounted) return;
 
     // Clear form
     setState(() {
@@ -255,6 +262,7 @@ class _BillingScreenState extends State<BillingScreen> {
       _walkInAddressController.clear();
       _saveCustomerForFuture = false;
     });
+
   }
 
   @override

@@ -57,7 +57,7 @@ class DatabaseHelper {
       ),
     );
 
-    // Migration helper: Ensure GST & barcode columns exist
+    // Migration helper: Ensure GST, barcode & bank detail columns exist
     try { await db.execute('ALTER TABLE products ADD COLUMN barcode TEXT;'); } catch (_) {}
     try { await db.execute('ALTER TABLE sales ADD COLUMN gst_rate REAL DEFAULT 0;'); } catch (_) {}
     try { await db.execute('ALTER TABLE sales ADD COLUMN cgst_rate REAL DEFAULT 0;'); } catch (_) {}
@@ -65,6 +65,11 @@ class DatabaseHelper {
     try { await db.execute('ALTER TABLE sales ADD COLUMN taxable_amount REAL DEFAULT 0;'); } catch (_) {}
     try { await db.execute('ALTER TABLE sales ADD COLUMN cgst_amount REAL DEFAULT 0;'); } catch (_) {}
     try { await db.execute('ALTER TABLE sales ADD COLUMN sgst_amount REAL DEFAULT 0;'); } catch (_) {}
+    try { await db.execute('ALTER TABLE settings ADD COLUMN account_number TEXT;'); } catch (_) {}
+    try { await db.execute('ALTER TABLE settings ADD COLUMN ifsc TEXT;'); } catch (_) {}
+    try { await db.execute('ALTER TABLE settings ADD COLUMN branch TEXT;'); } catch (_) {}
+    try { await db.execute('ALTER TABLE settings ADD COLUMN bank_name TEXT;'); } catch (_) {}
+    try { await db.execute('ALTER TABLE settings ADD COLUMN account_type TEXT;'); } catch (_) {}
 
     // Wipe old sample data if present and populate new translated official SK Masala catalog
     try {
@@ -147,13 +152,18 @@ class DatabaseHelper {
     final result = await db.query('settings');
     if (result.isNotEmpty) {
       final s = Settings.fromMap(result.first);
-      if (s.shopName != 'SK TRADERS' || s.address != 'Mullai Street, Sanjeevi Nagar') {
+      if (s.shopName == 'SK TRADERS' || s.phone == '0422-2345678' || !s.address.contains('Tiruchirappalli')) {
         final updated = Settings(
-          shopName: 'SK TRADERS',
-          address: 'Mullai Street, Sanjeevi Nagar',
-          phone: s.phone.isEmpty ? '0422-2345678' : s.phone,
+          shopName: 'MS TRADERS',
+          address: '138, Mullai Street, Sanjeevi Nagar,\nTiruchirappalli - 620002, Tamil Nadu, India.',
+          phone: '7708906866',
           gstNumber: s.gstNumber.isEmpty ? '33ABCDE1234F1Z5' : s.gstNumber,
           invoicePrefix: s.invoicePrefix.isEmpty ? 'INV' : s.invoicePrefix,
+          accountNumber: s.accountNumber,
+          ifsc: s.ifsc,
+          branch: s.branch,
+          bankName: s.bankName,
+          accountType: s.accountType,
         );
         await db.delete('settings');
         await db.insert('settings', updated.toMap());
@@ -162,15 +172,22 @@ class DatabaseHelper {
       return s;
     }
     final defaultSettings = Settings(
-      shopName: 'SK TRADERS',
-      address: 'Mullai Street, Sanjeevi Nagar',
-      phone: '0422-2345678',
+      shopName: 'MS TRADERS',
+      address: '138, Mullai Street, Sanjeevi Nagar,\nTiruchirappalli - 620002, Tamil Nadu, India.',
+      phone: '7708906866',
       gstNumber: '33ABCDE1234F1Z5',
       invoicePrefix: 'INV',
+      accountNumber: '05390200000618',
+      ifsc: 'BARB0TIRUCH',
+      branch: 'TRICHY MAIN',
+      bankName: 'BANK OF BARODA',
+      accountType: 'CURRENT ACCOUNT',
     );
     await db.insert('settings', defaultSettings.toMap());
     return defaultSettings;
   }
+
+
 
   // --- CATEGORIES ---
   Future<List<Category>> getCategories() async {

@@ -12,9 +12,26 @@ class AppFolderStorage {
   /// All data folders are created as siblings of the executable,
   /// so paths are always relative to where the app lives.
   static Directory _getBaseDirectory() {
-    // Parent of the running .exe — always relative to app location
-    return File(Platform.resolvedExecutable).parent;
+    // 1. Check current working directory if running in project root
+    final current = Directory.current;
+    if (File(p.join(current.path, 'pubspec.yaml')).existsSync()) {
+      return current;
+    }
+    // 2. Walk up from executable if running from build/ binary
+    final exeDir = File(Platform.resolvedExecutable).parent;
+    Directory curr = exeDir;
+    while (curr.path.length > 3 && p.basename(curr.path).toLowerCase() != 'build') {
+      final parent = curr.parent;
+      if (parent.path == curr.path) break;
+      curr = parent;
+    }
+    if (p.basename(curr.path).toLowerCase() == 'build') {
+      return curr.parent;
+    }
+    return exeDir;
   }
+
+
 
   /// Ensures that the specified sub-folder exists under the base directory.
   static Future<Directory> _getOrCreateFolder(String folderName) async {
