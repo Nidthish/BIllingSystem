@@ -12,6 +12,7 @@ import '../../models/sale_item.dart';
 import '../../models/settings.dart';
 import 'package:pdf/pdf.dart';
 import '../../utils/invoice_generator.dart';
+import '../../widgets/print_options_dialog.dart';
 
 class BillingScreen extends StatefulWidget {
   const BillingScreen({super.key});
@@ -325,7 +326,7 @@ class _BillingScreenState extends State<BillingScreen> {
 
       // Show Print Options Dialog (A4 / A5 radio selection)
       if (mounted) {
-        _showPrintOptionsDialog(
+        PrintOptionsDialog.showInvoiceDialog(
           parentContext: context,
           sale: sale,
           items: cartCopy,

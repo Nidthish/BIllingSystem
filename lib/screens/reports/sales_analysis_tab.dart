@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../providers/sales_analysis_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../utils/reports_pdf_generator.dart';
+import '../../widgets/print_options_dialog.dart';
 import '../../utils/reports_excel_generator.dart';
 import 'widgets/report_filter_panel.dart';
 import 'widgets/analysis_table.dart';
@@ -27,21 +28,25 @@ class _SalesAnalysisTabState extends State<SalesAnalysisTab> {
     });
   }
 
-  Future<void> _printReport() async {
+  void _printReport() {
     final provider = context.read<SalesAnalysisProvider>();
     final settings = context.read<SettingsProvider>().settings;
     if (settings == null) return;
-    try {
-      await ReportsPdfGenerator.printSalesAnalysis(
-        rows: provider.analysisRows,
-        summary: provider.summary,
-        filter: provider.filter,
-        settings: settings,
-        generatedBy: 'Admin',
-      );
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Print error: $e')));
-    }
+    PrintOptionsDialog.showReportDialog(
+      parentContext: context,
+      reportTitle: 'Sales Analysis Report',
+      reportFilename: 'SalesReport_Analysis',
+      buildPdfBytes: (format) async {
+        return ReportsPdfGenerator.buildSalesAnalysisPdfBytes(
+          rows: provider.analysisRows,
+          summary: provider.summary,
+          filter: provider.filter,
+          settings: settings,
+          generatedBy: 'Admin',
+          pageFormat: format,
+        );
+      },
+    );
   }
 
   Future<void> _exportPdf() async {

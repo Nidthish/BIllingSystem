@@ -7,6 +7,7 @@ import '../../models/product.dart';
 import '../../models/category.dart';
 import '../../models/settings.dart';
 import '../../utils/reports_pdf_generator.dart';
+import '../../widgets/print_options_dialog.dart';
 
 class ProductsScreen extends StatelessWidget {
   const ProductsScreen({super.key});
@@ -300,7 +301,7 @@ class ProductsScreen extends StatelessWidget {
                   foregroundColor: const Color(0xFF00875A),
                   side: const BorderSide(color: Color(0xFF00875A)),
                 ),
-                onPressed: () async {
+                onPressed: () {
                   final settings = context.read<SettingsProvider>().settings ?? Settings(
                     shopName: 'SK TRADERS',
                     address: '15 Market Street, Coimbatore, TN 641001',
@@ -314,20 +315,20 @@ class ProductsScreen extends StatelessWidget {
                     );
                     return;
                   }
-                  try {
-                    await ReportsPdfGenerator.printProductList(
-                      products: prodProv.products,
-                      categories: catProv.categories,
-                      settings: settings,
-                      generatedBy: 'Admin',
-                    );
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed to print: $e'), backgroundColor: Colors.red),
+                  PrintOptionsDialog.showReportDialog(
+                    parentContext: context,
+                    reportTitle: 'Product List Report',
+                    reportFilename: 'Product_Management_Report',
+                    buildPdfBytes: (format) async {
+                      return ReportsPdfGenerator.buildProductListPdfBytes(
+                        products: prodProv.products,
+                        categories: catProv.categories,
+                        settings: settings,
+                        generatedBy: 'Admin',
+                        pageFormat: format,
                       );
-                    }
-                  }
+                    },
+                  );
                 },
               );
             },

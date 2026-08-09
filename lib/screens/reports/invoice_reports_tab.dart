@@ -8,6 +8,7 @@ import '../../providers/product_provider.dart';
 import '../../utils/invoice_generator.dart';
 import '../../utils/reports_pdf_generator.dart';
 import '../../utils/reports_excel_generator.dart';
+import '../../widgets/print_options_dialog.dart';
 import '../../models/sale.dart';
 import '../../models/sale_item.dart';
 import '../../models/settings.dart';
@@ -64,7 +65,8 @@ class _InvoiceReportsTabState extends State<InvoiceReportsTab> {
           ? provider.allProducts
           : await DatabaseHelper.instance.getProducts();
 
-      await InvoiceGenerator.generateAndPrintInvoice(
+      PrintOptionsDialog.showInvoiceDialog(
+        parentContext: context,
         sale: sale,
         items: items,
         customerName: sale.customerName ?? 'Walk-in Customer',
@@ -146,19 +148,27 @@ class _InvoiceReportsTabState extends State<InvoiceReportsTab> {
     }
   }
 
-  Future<void> _printReport() async {
+  void _printReport() {
     final provider = context.read<InvoiceReportsProvider>();
     final settings = context.read<SettingsProvider>().settings;
     if (settings == null) return;
 
-    await ReportsPdfGenerator.printInvoiceReport(
-      sales: provider.filteredSales,
-      settings: settings,
-      generatedBy: 'Admin',
-      searchQuery: provider.searchQuery,
-      paymentMethod: provider.paymentMethodFilter,
-      startDate: provider.startDate,
-      endDate: provider.endDate,
+    PrintOptionsDialog.showReportDialog(
+      parentContext: context,
+      reportTitle: 'Invoice Report',
+      reportFilename: 'Invoice_Report',
+      buildPdfBytes: (format) async {
+        return ReportsPdfGenerator.buildInvoiceReportPdfBytes(
+          sales: provider.filteredSales,
+          settings: settings,
+          generatedBy: 'Admin',
+          searchQuery: provider.searchQuery,
+          paymentMethod: provider.paymentMethodFilter,
+          startDate: provider.startDate,
+          endDate: provider.endDate,
+          pageFormat: format,
+        );
+      },
     );
   }
 

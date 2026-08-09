@@ -8,6 +8,7 @@ import '../models/sales_analysis_row.dart';
 import '../models/report_filter_model.dart';
 import '../models/settings.dart';
 import 'app_folder_storage.dart';
+import 'invoice_generator.dart';
 
 // ─────────────────────────────────────────────────────────────────
 // Theme constants for the PDF
@@ -53,9 +54,9 @@ class ReportsPdfGenerator {
     } catch (_) {}
 
     try {
-      await Printing.layoutPdf(
-        onLayout: (_) async => Uint8List.fromList(bytes),
-        name: 'Dashboard_Report_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}',
+      await InvoiceGenerator.directPrintInvoiceBytes(
+        pdfBytes: Uint8List.fromList(bytes),
+        invoiceNo: 'Dashboard_Report_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}',
       );
     } catch (e) {
       print('Printing layout error: $e');
@@ -103,19 +104,18 @@ class ReportsPdfGenerator {
         build: (ctx) => [
           pw.SizedBox(height: 12),
           pw.Container(
-            padding: const pw.EdgeInsets.all(12),
+            padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: pw.BoxDecoration(
               color: PdfColors.teal50,
-              borderRadius: pw.BorderRadius.circular(8),
+              borderRadius: pw.BorderRadius.circular(6),
               border: pw.Border.all(color: PdfColors.teal200),
             ),
             child: pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('Today Sales: Rs. ${_numFmt.format(todaySales)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: _primaryColor)),
-                pw.Text('This Week Sales: Rs. ${_numFmt.format(weekSales)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: _primaryColor)),
-                pw.Text('This Month Sales: Rs. ${_numFmt.format(monthSales)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: _primaryColor)),
-                pw.Text('Low Stock Alerts: $lowStockCount Items', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: _accentColor)),
+                pw.Expanded(child: pw.Text('Today Sales: Rs. ${_numFmt.format(todaySales)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: _primaryColor))),
+                pw.Expanded(child: pw.Text('This Week Sales: Rs. ${_numFmt.format(weekSales)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: _primaryColor))),
+                pw.Expanded(child: pw.Text('This Month Sales: Rs. ${_numFmt.format(monthSales)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: _primaryColor))),
+                pw.Expanded(child: pw.Text('Low Stock Alerts: $lowStockCount Items', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: _accentColor), textAlign: pw.TextAlign.right)),
               ],
             ),
           ),
@@ -152,9 +152,9 @@ class ReportsPdfGenerator {
     } catch (_) {}
 
     try {
-      await Printing.layoutPdf(
-        onLayout: (_) async => Uint8List.fromList(bytes),
-        name: 'SalesAnalysis_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}',
+      await InvoiceGenerator.directPrintInvoiceBytes(
+        pdfBytes: Uint8List.fromList(bytes),
+        invoiceNo: 'SalesAnalysis_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}',
       );
     } catch (e) {
       print('Printing layout error: $e');
@@ -197,9 +197,9 @@ class ReportsPdfGenerator {
     } catch (_) {}
 
     try {
-      await Printing.layoutPdf(
-        onLayout: (_) async => Uint8List.fromList(bytes),
-        name: 'InvoiceReport_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}',
+      await InvoiceGenerator.directPrintInvoiceBytes(
+        pdfBytes: Uint8List.fromList(bytes),
+        invoiceNo: 'InvoiceReport_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}',
       );
     } catch (e) {
       print('Printing layout error: $e');
@@ -225,6 +225,41 @@ class ReportsPdfGenerator {
     return savedFile.path;
   }
 
+  /// Builds Sales Analysis PDF bytes with pageFormat parameter.
+  static Future<Uint8List> buildSalesAnalysisPdfBytes({
+    required List<SalesAnalysisRow> rows,
+    required ReportSummary summary,
+    required ReportFilterModel filter,
+    required Settings settings,
+    required String generatedBy,
+    PdfPageFormat pageFormat = PdfPageFormat.a4,
+  }) async {
+    return _buildSalesAnalysisPdf(
+      rows: rows, summary: summary, filter: filter,
+      settings: settings, generatedBy: generatedBy,
+      pageFormat: pageFormat,
+    );
+  }
+
+  /// Builds Invoice Report PDF bytes with pageFormat parameter.
+  static Future<Uint8List> buildInvoiceReportPdfBytes({
+    required List<Sale> sales,
+    required Settings settings,
+    required String generatedBy,
+    required String searchQuery,
+    required String paymentMethod,
+    required DateTime? startDate,
+    required DateTime? endDate,
+    PdfPageFormat pageFormat = PdfPageFormat.a4,
+  }) async {
+    return _buildInvoiceReportPdf(
+      sales: sales, settings: settings, generatedBy: generatedBy,
+      searchQuery: searchQuery, paymentMethod: paymentMethod,
+      startDate: startDate, endDate: endDate,
+      pageFormat: pageFormat,
+    );
+  }
+
   // ─────────────────────────────────────────────────────────────────
   // SALES ANALYSIS PDF BUILDER
   // ─────────────────────────────────────────────────────────────────
@@ -234,6 +269,7 @@ class ReportsPdfGenerator {
     required ReportFilterModel filter,
     required Settings settings,
     required String generatedBy,
+    PdfPageFormat pageFormat = PdfPageFormat.a4,
   }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
@@ -245,7 +281,7 @@ class ReportsPdfGenerator {
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
+        pageFormat: pageFormat.landscape,
         margin: const pw.EdgeInsets.all(28),
         header: (ctx) => _buildPageHeader(settings, 'Sales Analysis Report', now, generatedBy, startDate, endDate),
         footer: (ctx) => _buildPageFooter(ctx, settings, generatedBy, now),
@@ -280,6 +316,7 @@ class ReportsPdfGenerator {
     required String paymentMethod,
     required DateTime? startDate,
     required DateTime? endDate,
+    PdfPageFormat pageFormat = PdfPageFormat.a4,
   }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
@@ -290,7 +327,7 @@ class ReportsPdfGenerator {
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
+        pageFormat: pageFormat.landscape,
         margin: const pw.EdgeInsets.all(28),
         header: (ctx) => _buildPageHeader(settings, 'Invoice Report', now, generatedBy, startDate, endDate),
         footer: (ctx) => _buildPageFooter(ctx, settings, generatedBy, now),
@@ -336,9 +373,9 @@ class ReportsPdfGenerator {
     } catch (_) {}
 
     try {
-      await Printing.layoutPdf(
-        onLayout: (_) async => Uint8List.fromList(bytes),
-        name: 'ProductList_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}',
+      await InvoiceGenerator.directPrintInvoiceBytes(
+        pdfBytes: Uint8List.fromList(bytes),
+        invoiceNo: 'ProductList_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}',
       );
     } catch (e) {
       print('Printing layout error: $e');
@@ -363,11 +400,29 @@ class ReportsPdfGenerator {
     return savedFile.path;
   }
 
+  /// Builds Product List PDF Bytes for printing/saving with pageFormat parameter.
+  static Future<Uint8List> buildProductListPdfBytes({
+    required List<dynamic> products,
+    required List<dynamic> categories,
+    required Settings settings,
+    required String generatedBy,
+    PdfPageFormat pageFormat = PdfPageFormat.a4,
+  }) async {
+    return Uint8List.fromList(await _buildProductListPdf(
+      products: products,
+      categories: categories,
+      settings: settings,
+      generatedBy: generatedBy,
+      pageFormat: pageFormat,
+    ));
+  }
+
   static Future<List<int>> _buildProductListPdf({
     required List<dynamic> products,
     required List<dynamic> categories,
     required Settings settings,
     required String generatedBy,
+    PdfPageFormat pageFormat = PdfPageFormat.a4,
   }) async {
     final pdf = pw.Document();
     final now = DateTime.now();
@@ -403,9 +458,9 @@ class ReportsPdfGenerator {
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
+        pageFormat: pageFormat.landscape,
         margin: const pw.EdgeInsets.all(24),
-        header: (ctx) => _buildPageHeader(settings, 'Product Management — Current Stock Report', now, generatedBy, null, null),
+        header: (ctx) => _buildPageHeader(settings, 'Product Management - Current Stock Report', now, generatedBy, null, null),
         footer: (ctx) => _buildPageFooter(ctx, settings, generatedBy, now),
         build: (ctx) => [
           pw.SizedBox(height: 10),
@@ -505,11 +560,14 @@ class ReportsPdfGenerator {
     DateTime? startDate,
     DateTime? endDate,
   ) {
+    final cleanTitle = reportTitle.replaceAll('—', '-').replaceAll('–', '-');
+    final shopName = (settings.shopName.isEmpty || settings.shopName == 'SK Masala') ? 'MS TRADERS' : settings.shopName;
+
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Container(
-          padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: const pw.BoxDecoration(
             color: _headerBg,
             borderRadius: pw.BorderRadius.all(pw.Radius.circular(8)),
@@ -521,24 +579,25 @@ class ReportsPdfGenerator {
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   pw.Text(
-                    settings.shopName,
-                    style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                    shopName,
+                    style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
                   ),
                   pw.SizedBox(height: 2),
-                  pw.Text(settings.address, style: const pw.TextStyle(fontSize: 9, color: PdfColor(1, 1, 1, 0.7))),
-                  pw.Text('Phone: ${settings.phone}   GST: ${settings.gstNumber}',
-                      style: const pw.TextStyle(fontSize: 9, color: PdfColor(1, 1, 1, 0.7))),
+                  pw.Text(settings.address, style: const pw.TextStyle(fontSize: 8.5, color: PdfColor(1, 1, 1, 0.8))),
+                  pw.Text('Phone: ${settings.phone}${settings.gstNumber.isNotEmpty ? '   GST: ${settings.gstNumber}' : ''}',
+                      style: const pw.TextStyle(fontSize: 8.5, color: PdfColor(1, 1, 1, 0.8))),
                 ],
               ),
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.end,
                 children: [
-                  pw.Text(reportTitle,
-                      style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: _accentColor)),
+                  pw.Text(cleanTitle,
+                      style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: _accentColor)),
+                  pw.SizedBox(height: 2),
                   pw.Text('Generated: ${_dateFmt.format(now)} ${_timeFmt.format(now)}',
-                      style: const pw.TextStyle(fontSize: 8, color: PdfColor(1, 1, 1, 0.7))),
+                      style: const pw.TextStyle(fontSize: 8, color: PdfColor(1, 1, 1, 0.8))),
                   pw.Text('By: $generatedBy',
-                      style: const pw.TextStyle(fontSize: 8, color: PdfColor(1, 1, 1, 0.7))),
+                      style: const pw.TextStyle(fontSize: 8, color: PdfColor(1, 1, 1, 0.8))),
                 ],
               ),
             ],
@@ -623,18 +682,18 @@ class ReportsPdfGenerator {
     return pw.Row(
       children: cards.map((c) => pw.Expanded(
         child: pw.Container(
-          margin: const pw.EdgeInsets.symmetric(horizontal: 3),
-          padding: const pw.EdgeInsets.all(8),
+          margin: const pw.EdgeInsets.symmetric(horizontal: 2),
+          padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 5),
           decoration: pw.BoxDecoration(
-            border: pw.Border.all(color: c.$3, width: 1.5),
-            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+            border: pw.Border.all(color: c.$3, width: 1.2),
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(5)),
           ),
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Text(c.$1, style: pw.TextStyle(fontSize: 7, color: c.$3)),
-              pw.SizedBox(height: 3),
-              pw.Text(c.$2, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: c.$3)),
+              pw.Text(c.$1, style: pw.TextStyle(fontSize: 6.5, color: c.$3, fontWeight: pw.FontWeight.bold), maxLines: 1),
+              pw.SizedBox(height: 2),
+              pw.Text(c.$2, style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: c.$3), maxLines: 1),
             ],
           ),
         ),
@@ -765,9 +824,9 @@ class ReportsPdfGenerator {
 
   static pw.Widget _buildSalesGrandTotal(ReportSummary summary, List<SalesAnalysisRow> rows, List<_ColDef> cols, AnalysisOptions opts) {
     final cells = <pw.Widget>[
-      _cell('', bg: _totalRowBg, bold: true, color: PdfColors.white, fontSize: 8),
-      _cell('GRAND TOTAL', align: pw.TextAlign.left, bg: _totalRowBg, bold: true, color: PdfColors.white, fontSize: 8),
-      _cell('', bg: _totalRowBg, bold: true, color: PdfColors.white, fontSize: 8),
+      _cell('TOTAL', align: pw.TextAlign.center, bg: _totalRowBg, bold: true, color: PdfColors.white, fontSize: 8),
+      _cell('SUMMARY ALL ROWS', align: pw.TextAlign.left, bg: _totalRowBg, bold: true, color: PdfColors.white, fontSize: 8),
+      _cell('-', align: pw.TextAlign.center, bg: _totalRowBg, bold: true, color: PdfColors.white, fontSize: 8),
     ];
     if (opts.showQtySold) cells.add(_cell(_qtyFmt.format(summary.totalQtySold), align: pw.TextAlign.right, bg: _totalRowBg, bold: true, color: PdfColors.white, fontSize: 8));
     if (opts.showSaleAmount) cells.add(_cell('Rs. ${_numFmt.format(summary.totalSales)}', align: pw.TextAlign.right, bg: _totalRowBg, bold: true, color: PdfColors.white, fontSize: 8));
