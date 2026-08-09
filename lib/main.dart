@@ -18,14 +18,24 @@ import 'theme/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Handle Flutter framework & uncaught async errors gracefully without crashing the app
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    debugPrint('SmartBill Caught Flutter Error: ${details.exception}');
+  };
+
   // Initialize FFI for Windows
   if (Platform.isWindows || Platform.isLinux) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
   
-  // Initialize DB and make sure it's created
-  await DatabaseHelper.instance.database;
+  // Initialize DB safely
+  try {
+    await DatabaseHelper.instance.database;
+  } catch (e) {
+    debugPrint('Database init exception: $e');
+  }
 
   runApp(const SmartBillApp());
 }

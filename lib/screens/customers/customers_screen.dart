@@ -106,7 +106,9 @@ class CustomersScreen extends StatelessWidget {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
+                onPressed: () {
+                  if (dialogContext.mounted && Navigator.canPop(dialogContext)) Navigator.pop(dialogContext);
+                },
                 child: Text(customer == null ? 'Close' : 'Cancel'),
               ),
               ElevatedButton(
@@ -140,7 +142,9 @@ class CustomersScreen extends StatelessWidget {
                       formKey.currentState?.reset();
                     } else {
                       await provider.updateCustomer(newCustomer);
-                      if (parentContext.mounted) Navigator.pop(dialogContext);
+                      if (dialogContext.mounted && Navigator.canPop(dialogContext)) {
+                        Navigator.pop(dialogContext);
+                      }
                     }
                   }
                 },
@@ -161,14 +165,18 @@ class CustomersScreen extends StatelessWidget {
         content: Text('Are you sure you want to delete "${customer.customerName}"?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
+            onPressed: () {
+              if (dialogContext.mounted && Navigator.canPop(dialogContext)) Navigator.pop(dialogContext);
+            },
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               await context.read<CustomerProvider>().deleteCustomer(customer.customerId!);
-              if (context.mounted) Navigator.pop(dialogContext);
+              if (dialogContext.mounted && Navigator.canPop(dialogContext)) {
+                Navigator.pop(dialogContext);
+              }
             },
             child: const Text('Delete'),
           ),

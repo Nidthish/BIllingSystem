@@ -52,10 +52,14 @@ class ReportsPdfGenerator {
       await AppFolderStorage.saveReportPdf(Uint8List.fromList(bytes), 'Dashboard_Executive_Report');
     } catch (_) {}
 
-    await Printing.layoutPdf(
-      onLayout: (_) async => Uint8List.fromList(bytes),
-      name: 'Dashboard_Report_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}',
-    );
+    try {
+      await Printing.layoutPdf(
+        onLayout: (_) async => Uint8List.fromList(bytes),
+        name: 'Dashboard_Report_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}',
+      );
+    } catch (e) {
+      print('Printing layout error: $e');
+    }
   }
 
   /// Export Dashboard Sales report to a PDF file in Reports folder.
@@ -147,10 +151,14 @@ class ReportsPdfGenerator {
       await AppFolderStorage.saveReportPdf(Uint8List.fromList(bytes), 'SalesReport_Analysis');
     } catch (_) {}
 
-    await Printing.layoutPdf(
-      onLayout: (_) async => Uint8List.fromList(bytes),
-      name: 'SalesAnalysis_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}',
-    );
+    try {
+      await Printing.layoutPdf(
+        onLayout: (_) async => Uint8List.fromList(bytes),
+        name: 'SalesAnalysis_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}',
+      );
+    } catch (e) {
+      print('Printing layout error: $e');
+    }
   }
 
   /// Export Sales Analysis report to a PDF file in Reports folder.
@@ -188,10 +196,14 @@ class ReportsPdfGenerator {
       await AppFolderStorage.saveReportPdf(Uint8List.fromList(bytes), 'InvoiceReport');
     } catch (_) {}
 
-    await Printing.layoutPdf(
-      onLayout: (_) async => Uint8List.fromList(bytes),
-      name: 'InvoiceReport_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}',
-    );
+    try {
+      await Printing.layoutPdf(
+        onLayout: (_) async => Uint8List.fromList(bytes),
+        name: 'InvoiceReport_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}',
+      );
+    } catch (e) {
+      print('Printing layout error: $e');
+    }
   }
 
   /// Export Invoice Report to file in Reports folder.
@@ -323,10 +335,14 @@ class ReportsPdfGenerator {
       await AppFolderStorage.saveProductManagementPdf(Uint8List.fromList(bytes), 'Product_Management_Report');
     } catch (_) {}
 
-    await Printing.layoutPdf(
-      onLayout: (_) async => Uint8List.fromList(bytes),
-      name: 'ProductList_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}',
-    );
+    try {
+      await Printing.layoutPdf(
+        onLayout: (_) async => Uint8List.fromList(bytes),
+        name: 'ProductList_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}',
+      );
+    } catch (e) {
+      print('Printing layout error: $e');
+    }
   }
 
   /// Export current product list PDF and auto-saves to Reports/Product Management/.

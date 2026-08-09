@@ -39,7 +39,9 @@ class CategoriesScreen extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
+            onPressed: () {
+              if (dialogContext.mounted && Navigator.canPop(dialogContext)) Navigator.pop(dialogContext);
+            },
             child: const Text('Cancel'),
           ),
           ElevatedButton(
@@ -58,11 +60,13 @@ class CategoriesScreen extends StatelessWidget {
                   } else {
                     await provider.updateCategory(newCat);
                   }
-                  if (context.mounted) Navigator.pop(dialogContext);
+                  if (dialogContext.mounted && Navigator.canPop(dialogContext)) Navigator.pop(dialogContext);
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
-                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+                    );
+                  }
                 }
               }
             },
@@ -81,7 +85,9 @@ class CategoriesScreen extends StatelessWidget {
         content: Text('Are you sure you want to delete category "${category.categoryName}"?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
+            onPressed: () {
+              if (dialogContext.mounted && Navigator.canPop(dialogContext)) Navigator.pop(dialogContext);
+            },
             child: const Text('Cancel'),
           ),
           ElevatedButton(
@@ -89,12 +95,14 @@ class CategoriesScreen extends StatelessWidget {
             onPressed: () async {
               try {
                 await context.read<CategoryProvider>().deleteCategory(category.categoryId!);
-                if (context.mounted) Navigator.pop(dialogContext);
+                if (dialogContext.mounted && Navigator.canPop(dialogContext)) Navigator.pop(dialogContext);
               } catch (e) {
-                if (context.mounted) Navigator.pop(dialogContext);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
-                );
+                if (dialogContext.mounted && Navigator.canPop(dialogContext)) Navigator.pop(dialogContext);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+                  );
+                }
               }
             },
             child: const Text('Delete'),

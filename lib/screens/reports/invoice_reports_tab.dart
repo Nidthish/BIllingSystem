@@ -99,11 +99,16 @@ class _InvoiceReportsTabState extends State<InvoiceReportsTab> {
           'Delete invoice "${sale.invoiceNo}"?\n\nThis will restore item stock back to inventory.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              if (ctx.mounted && Navigator.canPop(ctx)) Navigator.pop(ctx);
+            },
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              Navigator.pop(ctx);
+              if (ctx.mounted && Navigator.canPop(ctx)) Navigator.pop(ctx);
               await context.read<InvoiceReportsProvider>().deleteSale(sale.saleId!);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

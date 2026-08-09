@@ -100,19 +100,24 @@ class _MainScreenState extends State<MainScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                            color: themeProvider.isDarkMode ? const Color(0xFF34D399) : const Color(0xFF00875A),
-                            size: 22,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            themeProvider.isDarkMode ? 'Night Mode' : 'Light Mode',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                          ),
-                        ],
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Icon(
+                              themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                              color: themeProvider.isDarkMode ? const Color(0xFF34D399) : const Color(0xFF00875A),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                themeProvider.isDarkMode ? 'Night Mode' : 'Light Mode',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       Switch(
                         value: themeProvider.isDarkMode,

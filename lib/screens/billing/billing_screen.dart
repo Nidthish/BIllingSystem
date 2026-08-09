@@ -10,6 +10,7 @@ import '../../models/customer.dart';
 import '../../models/sale.dart';
 import '../../models/sale_item.dart';
 import '../../models/settings.dart';
+import 'package:pdf/pdf.dart';
 import '../../utils/invoice_generator.dart';
 
 class BillingScreen extends StatefulWidget {
@@ -31,6 +32,7 @@ class _BillingScreenState extends State<BillingScreen> {
 
   Product? _selectedProduct;
   final TextEditingController _productSearchController = TextEditingController();
+  final FocusNode _productSearchFocusNode = FocusNode();
   final TextEditingController _qtyController = TextEditingController(text: '1');
   final TextEditingController _gstRateController = TextEditingController(text: '5.0');
   
@@ -45,6 +47,18 @@ class _BillingScreenState extends State<BillingScreen> {
     InvoiceGenerator.preloadAssets();
   }
 
+  @override
+  void dispose() {
+    _walkInNameController.dispose();
+    _walkInPhoneController.dispose();
+    _walkInAddressController.dispose();
+    _productSearchController.dispose();
+    _productSearchFocusNode.dispose();
+    _qtyController.dispose();
+    _gstRateController.dispose();
+    super.dispose();
+  }
+
   void _addToCart() {
     if (_selectedProduct == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a product first')));
@@ -54,11 +68,19 @@ class _BillingScreenState extends State<BillingScreen> {
     double qty = double.tryParse(_qtyController.text) ?? 1;
     if (qty <= 0) qty = 1;
 
-    // Stock Validation
+    // Stock & Product Limit Validation
     int currentCartQty = 0;
     final existingIndex = _cart.indexWhere((item) => item.productId == _selectedProduct!.productId);
     if (existingIndex >= 0) {
       currentCartQty = _cart[existingIndex].quantity.toInt();
+    } else if (_cart.length >= 40) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('One invoice can contain only 40 products.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
     }
 
     if (_selectedProduct!.stock < (currentCartQty + qty)) {
@@ -152,6 +174,16 @@ class _BillingScreenState extends State<BillingScreen> {
 
     if (_cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cart is empty! Add products first.')));
+      return;
+    }
+
+    if (_cart.length > 40) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('One invoice can contain only 40 products.'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
@@ -262,14 +294,8 @@ class _BillingScreenState extends State<BillingScreen> {
       await salesProvider.createSale(sale, _cart);
       await productProvider.loadProducts(); // Refresh live stock in state
 
-      if (!mounted) return;
-
-      messenger.showSnackBar(
-        SnackBar(content: Text('Invoice $invoiceNo created! Saved to Invoices folder & sent to printer.')),
-      );
-
-      // Generate & Print Invoice PDF
-      await InvoiceGenerator.generateAndPrintInvoice(
+      // Save invoice PDF quietly to Invoices/ folder (A4 default)
+      await InvoiceGenerator.generateAndSaveInvoice(
         sale: sale,
         items: cartCopy,
         customerName: customerName,
@@ -282,7 +308,11 @@ class _BillingScreenState extends State<BillingScreen> {
 
       if (!mounted) return;
 
-      // Clear form
+      messenger.showSnackBar(
+        SnackBar(content: Text('Invoice $invoiceNo created & saved to Invoices folder!')),
+      );
+
+      // Clear form & reset processing state immediately so UI resets instantly
       setState(() {
         _cart.clear();
         _selectedCustomer = null;
@@ -290,7 +320,23 @@ class _BillingScreenState extends State<BillingScreen> {
         _walkInPhoneController.clear();
         _walkInAddressController.clear();
         _saveCustomerForFuture = false;
+        _isProcessing = false;
       });
+
+      // Show Print Options Dialog (A4 / A5 radio selection)
+      if (mounted) {
+        _showPrintOptionsDialog(
+          parentContext: context,
+          sale: sale,
+          items: cartCopy,
+          customerName: customerName,
+          customerPhone: customerPhone,
+          customerAddress: customerAddress,
+          customerGst: _selectedCustomer?.gstNumber,
+          settings: activeSettings,
+          allProducts: productProvider.products,
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -307,6 +353,165 @@ class _BillingScreenState extends State<BillingScreen> {
         });
       }
     }
+  }
+
+  void _showPrintOptionsDialog({
+    required BuildContext parentContext,
+    required Sale sale,
+    required List<SaleItem> items,
+    required String customerName,
+    required String customerPhone,
+    required String customerAddress,
+    String? customerGst,
+    required Settings settings,
+    required List<Product> allProducts,
+  }) {
+    String selectedPaperFormat = 'A4'; // 'A4' default radio selection
+
+    showDialog(
+      context: parentContext,
+      barrierDismissible: true,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Color(0xFF00875A), size: 28),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Invoice Saved Successfully!',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Invoice #${sale.invoiceNo} has been saved to your "Invoices" folder.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.white70 : Colors.grey.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Select Paper Format for Printing:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E2D27) : const Color(0xFFF4F9F6),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF00875A).withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        RadioListTile<String>(
+                          value: 'A4',
+                          groupValue: selectedPaperFormat,
+                          activeColor: const Color(0xFF00875A),
+                          title: const Text('A4 Paper Format (Default - Standard Sheet)', style: TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle: const Text('Full A4 sheet (210 x 297 mm)'),
+                          onChanged: (val) {
+                            if (val != null) setDialogState(() => selectedPaperFormat = val);
+                          },
+                        ),
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+                        RadioListTile<String>(
+                          value: 'A5',
+                          groupValue: selectedPaperFormat,
+                          activeColor: const Color(0xFF00875A),
+                          title: const Text('A5 Paper Format (Compact Sheet)', style: TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle: const Text('Half A4 sheet (148 x 210 mm)'),
+                          onChanged: (val) {
+                            if (val != null) setDialogState(() => selectedPaperFormat = val);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.close),
+                  label: const Text('Close (No Hard Copy)'),
+                  onPressed: () {
+                    if (dialogCtx.mounted && Navigator.canPop(dialogCtx)) {
+                      Navigator.pop(dialogCtx);
+                    }
+                  },
+                ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.print),
+                  label: const Text('Print Invoice'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00875A),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                  onPressed: () async {
+                    if (dialogCtx.mounted && Navigator.canPop(dialogCtx)) {
+                      Navigator.pop(dialogCtx);
+                    }
+
+                    final format = selectedPaperFormat == 'A5' ? PdfPageFormat.a5 : PdfPageFormat.a4;
+                    final pdfBytes = await InvoiceGenerator.buildInvoicePdfBytes(
+                      sale: sale,
+                      items: items,
+                      customerName: customerName,
+                      customerPhone: customerPhone,
+                      customerAddress: customerAddress,
+                      customerGst: customerGst,
+                      settings: settings,
+                      allProducts: allProducts,
+                      pageFormat: format,
+                    );
+
+                    bool printed = false;
+                    try {
+                      printed = await InvoiceGenerator.directPrintInvoiceBytes(
+                        pdfBytes: pdfBytes,
+                        invoiceNo: sale.invoiceNo,
+                      );
+                    } catch (e) {
+                      debugPrint('Print error: $e');
+                    }
+
+                    if (parentContext.mounted) {
+                      if (printed) {
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                          const SnackBar(
+                            content: Text('Invoice sent directly to printer!'),
+                            backgroundColor: Color(0xFF00875A),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                          const SnackBar(
+                            content: Text('Invoice saved in "Invoices" folder! Connect a paper printer to print hard copies.'),
+                            backgroundColor: Color(0xFF00875A),
+                            duration: Duration(seconds: 4),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -460,7 +665,7 @@ class _BillingScreenState extends State<BillingScreen> {
                                   flex: 3,
                                   child: RawAutocomplete<Product>(
                                     textEditingController: _productSearchController,
-                                    focusNode: FocusNode(),
+                                    focusNode: _productSearchFocusNode,
                                     optionsBuilder: (TextEditingValue textEditingValue) {
                                       if (textEditingValue.text.isEmpty) {
                                         return products;

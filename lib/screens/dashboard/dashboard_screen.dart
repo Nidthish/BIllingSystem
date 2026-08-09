@@ -154,7 +154,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
+            onPressed: () {
+              if (dialogCtx.mounted && Navigator.canPop(dialogCtx)) Navigator.pop(dialogCtx);
+            },
             child: const Text('Close'),
           ),
         ],

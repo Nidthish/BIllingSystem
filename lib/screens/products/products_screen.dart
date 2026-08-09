@@ -174,7 +174,9 @@ class ProductsScreen extends StatelessWidget {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
+                  onPressed: () {
+                    if (dialogContext.mounted && Navigator.canPop(dialogContext)) Navigator.pop(dialogContext);
+                  },
                   child: Text(product == null ? 'Close' : 'Cancel'),
                 ),
                 ElevatedButton(
@@ -220,6 +222,8 @@ class ProductsScreen extends StatelessWidget {
                             ScaffoldMessenger.of(parentContext).showSnackBar(
                               const SnackBar(content: Text('Product updated successfully!'), backgroundColor: Color(0xFF00875A)),
                             );
+                          }
+                          if (dialogContext.mounted && Navigator.canPop(dialogContext)) {
                             Navigator.pop(dialogContext);
                           }
                         }
@@ -253,15 +257,19 @@ class ProductsScreen extends StatelessWidget {
         content: Text('Are you sure you want to delete "${product.productName}"?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
+            onPressed: () {
+              if (dialogContext.mounted && Navigator.canPop(dialogContext)) Navigator.pop(dialogContext);
+            },
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               await context.read<ProductProvider>().deleteProduct(product.productId!);
-              if (context.mounted) {
+              if (dialogContext.mounted && Navigator.canPop(dialogContext)) {
                 Navigator.pop(dialogContext);
+              }
+              if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Product deleted successfully!')),
                 );

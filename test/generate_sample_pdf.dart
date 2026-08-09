@@ -12,7 +12,7 @@ void main() {
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  test('Generate Real Printable Sample Invoice PDF with 5 Products', () async {
+  test('Generate Real Printable Sample Invoice PDF with 40 Products', () async {
     final settings = Settings(
       shopName: 'MS TRADERS',
       address: '138, Mullai Street, Sanjeevi Nagar,\nTiruchirappalli - 620002, Tamil Nadu, India.',
@@ -26,52 +26,83 @@ void main() {
       accountType: 'CURRENT ACCOUNT',
     );
 
+    final productNames = [
+      'Chicken Masala', 'Mutton Masala', 'Fish Curry Masala', 'Garam Masala', 'Turmeric Powder',
+      'Chilli Powder', 'Coriander Powder', 'Cumin Powder', 'Black Pepper', 'Cardamom',
+      'Clove', 'Cinnamon Stick', 'Fennel Seeds', 'Mustard Seeds', 'Fenugreek Seeds',
+      'Health Mix Powder', 'Rava / Sooji', 'Wheat Flour (Atta)', 'Rice Flour', 'Toor Dal',
+      'Moong Dal', 'Urad Dal', 'Chana Dal', 'Whole Cashew Nut', 'Dry Raisins (Kishmish)',
+      'Almonds (Badam)', 'Pistachios (Pista)', 'Asafoetida (Perungayam)', 'Star Anise', 'Bay Leaves',
+      'Dry Ginger Powder', 'Nutmeg Powder', 'Tamarind Paste', 'Sesame Seeds', 'Groundnut Oil',
+      'Gingelly Oil', 'Sunflower Oil', 'White Pepper', 'Kasoori Methi', 'Saffron (Kesar)'
+    ];
+
+    final items = <SaleItem>[];
+    final products = <Product>[];
+    double subtotal = 0;
+
+    for (int i = 0; i < 40; i++) {
+      final pId = i + 1;
+      final price = (i + 1) * 12.0 + 25.0;
+      final qty = (i % 3) + 1.0;
+      final itemTotal = price * qty;
+      subtotal += itemTotal;
+
+      products.add(Product(
+        productId: pId,
+        productName: productNames[i],
+        categoryId: (i % 5) + 1,
+        purchasePrice: price * 0.7,
+        sellingPrice: price,
+        stock: 100,
+        minimumStock: 10,
+        gst: 5.0,
+        unit: i % 4 == 0 ? 'pcs' : 'kg',
+        barcode: 'SK${(i + 1).toString().padLeft(3, '0')}',
+      ));
+
+      items.add(SaleItem(
+        saleId: 4040,
+        productId: pId,
+        quantity: qty,
+        price: price,
+        total: itemTotal,
+      ));
+    }
+
+    final gst = subtotal * 0.05;
+    final grandTotal = subtotal + gst;
+
     final sale = Sale(
-      saleId: 101,
-      invoiceNo: 'INV-01234',
+      saleId: 4040,
+      invoiceNo: 'INV-2026-040',
       customerId: 1,
-      customerName: 'PONMALAPATTI',
-      date: '2030-02-11T10:30:00.000',
-      subtotal: 2930.00,
+      customerName: 'SRIRAM (SK TRADERS)',
+      date: DateTime.now().toIso8601String(),
+      subtotal: subtotal,
       discount: 0.0,
-      gst: 146.50,
-      grandTotal: 3076.50,
+      gst: gst,
+      grandTotal: grandTotal,
       paymentMethod: 'Cash',
       gstRate: 5.0,
       cgstRate: 2.5,
       sgstRate: 2.5,
-      taxableAmount: 2930.00,
-      cgstAmount: 73.25,
-      sgstAmount: 73.25,
+      taxableAmount: subtotal,
+      cgstAmount: gst / 2,
+      sgstAmount: gst / 2,
     );
-
-    final items = [
-      SaleItem(saleId: 101, productId: 1, quantity: 2, price: 120, total: 240),
-      SaleItem(saleId: 101, productId: 2, quantity: 1, price: 450, total: 450),
-      SaleItem(saleId: 101, productId: 3, quantity: 3, price: 180, total: 540),
-      SaleItem(saleId: 101, productId: 4, quantity: 5, price: 160, total: 800),
-      SaleItem(saleId: 101, productId: 5, quantity: 1, price: 900, total: 900),
-    ];
-
-    final products = [
-      Product(productId: 1, productName: 'மசாலா வகைகள் (Chicken Masala)', categoryId: 1, purchasePrice: 80, sellingPrice: 120, stock: 50, minimumStock: 5, gst: 5, unit: 'pcs', barcode: 'SK001'),
-      Product(productId: 2, productName: 'மசாலா மூலப்பொருட்கள் (Black Pepper)', categoryId: 2, purchasePrice: 300, sellingPrice: 450, stock: 30, minimumStock: 5, gst: 5, unit: 'kg', barcode: 'SKMI009'),
-      Product(productId: 3, productName: 'மாவு வகைகள் (Health Mix Powder)', categoryId: 4, purchasePrice: 120, sellingPrice: 180, stock: 40, minimumStock: 5, gst: 5, unit: 'kg', barcode: 'SK058'),
-      Product(productId: 4, productName: 'பருப்பு வகைகள் (Toor Dal)', categoryId: 5, purchasePrice: 120, sellingPrice: 160, stock: 100, minimumStock: 5, gst: 5, unit: 'kg', barcode: 'SKDV02'),
-      Product(productId: 5, productName: 'முந்திரி வகைகள் (Whole Cashew)', categoryId: 6, purchasePrice: 700, sellingPrice: 900, stock: 20, minimumStock: 5, gst: 5, unit: 'kg', barcode: 'SKCV05'),
-    ];
 
     await InvoiceGenerator.generateAndPrintInvoice(
       sale: sale,
       items: items,
-      customerName: 'PONMALAPATTI',
-      customerPhone: '9876543210',
-      customerAddress: 'TRICHY - 4, TAMILNADU',
+      customerName: 'SRIRAM (SK TRADERS)',
+      customerPhone: '6382471361',
+      customerAddress: 'TRICHY - 620002, TAMIL NADU',
       customerGst: '33AAACB1234C1Z1',
       settings: settings,
       allProducts: products,
     );
 
-    print('Sample PDF generated successfully!');
+    print('Sample PDF with 40 products generated successfully!');
   });
 }
