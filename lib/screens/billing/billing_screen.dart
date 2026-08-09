@@ -668,25 +668,72 @@ class _BillingScreenState extends State<BillingScreen> {
                                     textEditingController: _productSearchController,
                                     focusNode: _productSearchFocusNode,
                                     optionsBuilder: (TextEditingValue textEditingValue) {
-                                      if (textEditingValue.text.isEmpty) {
+                                      final query = textEditingValue.text.trim().toLowerCase();
+                                      if (query.isEmpty) {
                                         return products;
                                       }
                                       return products.where((Product option) {
-                                        return option.productName
-                                            .toLowerCase()
-                                            .contains(textEditingValue.text.toLowerCase());
+                                        final nameLower = option.productName.toLowerCase();
+                                        final codeLower = option.codeOrId.toLowerCase();
+                                        final barcodeLower = (option.barcode ?? '').toLowerCase();
+                                        final idStr = option.productId != null ? option.productId.toString() : '';
+
+                                        return nameLower.contains(query) ||
+                                            codeLower.contains(query) ||
+                                            barcodeLower.contains(query) ||
+                                            idStr == query ||
+                                            '#$idStr' == query;
                                       });
                                     },
-                                    displayStringForOption: (Product option) => option.productName,
+                                    displayStringForOption: (Product option) {
+                                      final code = option.codeOrId;
+                                      return code.isNotEmpty ? '${option.productName} ($code)' : option.productName;
+                                    },
                                     fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
                                       return TextField(
                                         controller: controller,
                                         focusNode: focusNode,
                                         decoration: const InputDecoration(
-                                          labelText: 'Search Product Name...',
+                                          labelText: 'Search Product by Name, Code or ID...',
+                                          hintText: 'e.g. SK079, Badam, #1',
                                           prefixIcon: Icon(Icons.search),
                                           suffixIcon: Icon(Icons.arrow_drop_down),
                                         ),
+                                        onSubmitted: (value) {
+                                          final query = value.trim().toLowerCase();
+                                          if (query.isNotEmpty) {
+                                            final matches = products.where((p) {
+                                              final nameLower = p.productName.toLowerCase();
+                                              final codeLower = p.codeOrId.toLowerCase();
+                                              final barcodeLower = (p.barcode ?? '').toLowerCase();
+                                              final idStr = p.productId != null ? p.productId.toString() : '';
+                                              return codeLower == query ||
+                                                  barcodeLower == query ||
+                                                  idStr == query ||
+                                                  '#$idStr' == query ||
+                                                  nameLower == query ||
+                                                  nameLower.contains(query) ||
+                                                  codeLower.contains(query);
+                                            }).toList();
+
+                                            if (matches.isNotEmpty) {
+                                              final exactMatch = matches.firstWhere(
+                                                (p) =>
+                                                    p.codeOrId.toLowerCase() == query ||
+                                                    (p.barcode ?? '').toLowerCase() == query ||
+                                                    p.productId.toString() == query,
+                                                orElse: () => matches.first,
+                                              );
+                                              setState(() {
+                                                _selectedProduct = exactMatch;
+                                                controller.text = exactMatch.codeOrId.isNotEmpty
+                                                    ? '${exactMatch.productName} (${exactMatch.codeOrId})'
+                                                    : exactMatch.productName;
+                                              });
+                                              onFieldSubmitted();
+                                            }
+                                          }
+                                        },
                                       );
                                     },
                                     optionsViewBuilder: (context, onSelected, options) {
@@ -697,8 +744,8 @@ class _BillingScreenState extends State<BillingScreen> {
                                           color: isDark ? const Color(0xFF1C382B) : Colors.white,
                                           borderRadius: BorderRadius.circular(8),
                                           child: Container(
-                                            width: 400,
-                                            constraints: const BoxConstraints(maxHeight: 250),
+                                            width: 450,
+                                            constraints: const BoxConstraints(maxHeight: 280),
                                             child: ListView.builder(
                                               padding: EdgeInsets.zero,
                                               shrinkWrap: true,
@@ -706,11 +753,49 @@ class _BillingScreenState extends State<BillingScreen> {
                                               itemBuilder: (BuildContext context, int index) {
                                                 final Product option = options.elementAt(index);
                                                 final isLow = option.stock <= option.minimumStock;
+                                                final code = option.codeOrId;
                                                 return ListTile(
-                                                  title: Text(option.productName, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-                                                  subtitle: Text('Stock: ${option.stock} ${option.unit ?? "pcs"} | Price: ₹${option.sellingPrice}', style: TextStyle(color: isDark ? Colors.white70 : Colors.grey.shade600)),
+                                                  title: Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: Text(
+                                                          option.productName,
+                                                          style: TextStyle(
+                                                            fontWeight: FontWeight.bold,
+                                                            color: isDark ? Colors.white : Colors.black87,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      if (code.isNotEmpty) ...[
+                                                        const SizedBox(width: 8),
+                                                        Container(
+                                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                          decoration: BoxDecoration(
+                                                            color: isDark ? const Color(0xFF005A3C) : const Color(0xFFE6F4EA),
+                                                            borderRadius: BorderRadius.circular(6),
+                                                            border: Border.all(color: const Color(0xFF00875A)),
+                                                          ),
+                                                          child: Text(
+                                                            code,
+                                                            style: const TextStyle(
+                                                              fontSize: 11,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: Color(0xFF00875A),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ],
+                                                  ),
+                                                  subtitle: Text(
+                                                    'Stock: ${option.stock} ${option.unit ?? "pcs"} | Price: ₹${option.sellingPrice.toStringAsFixed(2)}',
+                                                    style: TextStyle(color: isDark ? Colors.white70 : Colors.grey.shade600),
+                                                  ),
                                                   trailing: isLow
-                                                      ? const Chip(label: Text('Low Stock', style: TextStyle(color: Colors.white, fontSize: 10)), backgroundColor: Colors.orange)
+                                                      ? const Chip(
+                                                          label: Text('Low Stock', style: TextStyle(color: Colors.white, fontSize: 10)),
+                                                          backgroundColor: Colors.orange,
+                                                        )
                                                       : null,
                                                   onTap: () {
                                                     onSelected(option);

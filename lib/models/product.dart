@@ -25,6 +25,13 @@ class Product {
     this.createdAt,
   });
 
+  String get codeOrId {
+    if (barcode != null && barcode!.trim().isNotEmpty) {
+      return barcode!.trim();
+    }
+    return productId != null ? '#$productId' : '';
+  }
+
   factory Product.fromMap(Map<String, dynamic> map) {
     return Product(
       productId: map['product_id'],
