@@ -94,28 +94,28 @@ class InvoiceGenerator {
                         pw.Text(
                           'MS TRADERS',
                           style: pw.TextStyle(
-                            fontSize: 20,
+                            fontSize: 30,
                             fontWeight: pw.FontWeight.bold,
                             color: primaryGreen,
                             font: fontBold,
                             fontFallback: fallbacks,
                           ),
                         ),
-                        pw.SizedBox(height: 1),
-                        pw.Container(height: 1.2, width: 130, color: primaryGreen),
-                        pw.SizedBox(height: 2),
+                        pw.SizedBox(height: 4),
+                        pw.Container(height: 1.2, width: 200, color: primaryGreen),
+                        pw.SizedBox(height: 6),
                         pw.Text(
                             '138, Mullai Street, Sanjeevi Nagar,\n'
                             'Tiruchirappalli- 620002, Tamil Nadu, India',
                           style: pw.TextStyle(
-                            fontSize: 8,
+                            fontSize: 9,
                             fontWeight: pw.FontWeight.bold,
                             font: fontReg,
                             fontFallback: fallbacks,
                             lineSpacing: 1.1,
                           ),
                         ),
-                        pw.SizedBox(height: 2),
+                        pw.SizedBox(height: 5),
                         pw.Text(
                           'PHO.NO :7708906866',
                           style: pw.TextStyle(
@@ -130,45 +130,51 @@ class InvoiceGenerator {
                   ),
                   pw.Expanded(
                     flex: 4,
-                    child: pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.end,
-                      children: [
-                        if (_skLogoImage != null)
-                          pw.Image(_skLogoImage!, width: 185, height: 68, fit: pw.BoxFit.contain)
-                        else
-                          pw.Container(
-                            padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-                            decoration: pw.BoxDecoration(
-                              color: primaryGreen,
-                              borderRadius: pw.BorderRadius.circular(20),
-                            ),
-                            child: pw.Text(
-                              'SK MASALA',
-                              style: pw.TextStyle(fontSize: 17, fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontFallback: fallbacks),
-                            ),
-                          ),
-                        pw.SizedBox(height: 1),
-                        pw.Container(
-                          width: 185,
-                          alignment: pw.Alignment.centerRight,
-                          child: pw.Column(
-                            crossAxisAlignment: pw.CrossAxisAlignment.end,
-                            children: [
-                              pw.Text(
-                                'HOTEL STYLE MASALA',
-                                style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, font: fontBold, fontFallback: fallbacks),
-                                textAlign: pw.TextAlign.right,
+                    child: pw.Container(
+                      alignment: pw.Alignment.topRight, // Pushes the entire block to the right side
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.center, // Centers the logo and text relative to each other
+                        mainAxisSize: pw.MainAxisSize.min, // Ensures the column only takes up needed vertical space
+                        children: [
+                          if (_skLogoImage != null)
+                            pw.Image(_skLogoImage!, width: 205, height: 68, fit: pw.BoxFit.contain)
+                          else
+                            pw.Container(
+                              decoration: pw.BoxDecoration(
+                                color: primaryGreen,
+                                borderRadius: pw.BorderRadius.circular(8),
                               ),
-                              pw.SizedBox(height: 1),
-                              pw.Text(
-                                'TRADITIONAL CHETTINAD STYLE MASALAS',
-                                style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, font: fontBold, fontFallback: fallbacks),
-                                textAlign: pw.TextAlign.right,
+                              child: pw.Text(
+                                'SK MASALA',
+                                style: pw.TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: pw.FontWeight.bold,
+                                    color: PdfColors.white,
+                                    fontFallback: fallbacks),
                               ),
-                            ],
+                            ),
+                          pw.SizedBox(height: 2),
+                          pw.Text(
+                            'HOTEL STYLE MASALA',
+                            style: pw.TextStyle(
+                                fontSize: 8,
+                                fontWeight: pw.FontWeight.bold,
+                                font: fontBold,
+                                fontFallback: fallbacks),
+                            textAlign: pw.TextAlign.center,
                           ),
-                        ),
-                      ],
+                          pw.SizedBox(height: 2),
+                          pw.Text(
+                            'TRADITIONAL CHETTINAD STYLE\nMASALAS', // Added \n to break the line like in the image
+                            style: pw.TextStyle(
+                                fontSize: 8,
+                                fontWeight: pw.FontWeight.bold,
+                                font: fontBold,
+                                fontFallback: fallbacks),
+                            textAlign: pw.TextAlign.center,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
