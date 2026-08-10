@@ -668,13 +668,19 @@ class _BillingScreenState extends State<BillingScreen> {
                                     textEditingController: _productSearchController,
                                     focusNode: _productSearchFocusNode,
                                     optionsBuilder: (TextEditingValue textEditingValue) {
-                                      if (textEditingValue.text.isEmpty) {
+                                      final query = textEditingValue.text.trim().toLowerCase();
+                                      if (query.isEmpty) {
                                         return products;
                                       }
                                       return products.where((Product option) {
-                                        return option.productName
+                                        final nameMatch = option.productName
                                             .toLowerCase()
-                                            .contains(textEditingValue.text.toLowerCase());
+                                            .contains(query);
+                                        final codeMatch = option.barcode != null &&
+                                            option.barcode!.toLowerCase().contains(query);
+                                        final idMatch = option.productId != null &&
+                                            option.productId.toString() == query;
+                                        return nameMatch || codeMatch || idMatch;
                                       });
                                     },
                                     displayStringForOption: (Product option) => option.productName,
@@ -683,7 +689,7 @@ class _BillingScreenState extends State<BillingScreen> {
                                         controller: controller,
                                         focusNode: focusNode,
                                         decoration: const InputDecoration(
-                                          labelText: 'Search Product Name...',
+                                          labelText: 'Search Product Name or Code (e.g. SK002)...',
                                           prefixIcon: Icon(Icons.search),
                                           suffixIcon: Icon(Icons.arrow_drop_down),
                                         ),
@@ -697,8 +703,8 @@ class _BillingScreenState extends State<BillingScreen> {
                                           color: isDark ? const Color(0xFF1C382B) : Colors.white,
                                           borderRadius: BorderRadius.circular(8),
                                           child: Container(
-                                            width: 400,
-                                            constraints: const BoxConstraints(maxHeight: 250),
+                                            width: 450,
+                                            constraints: const BoxConstraints(maxHeight: 280),
                                             child: ListView.builder(
                                               padding: EdgeInsets.zero,
                                               shrinkWrap: true,
@@ -706,11 +712,26 @@ class _BillingScreenState extends State<BillingScreen> {
                                               itemBuilder: (BuildContext context, int index) {
                                                 final Product option = options.elementAt(index);
                                                 final isLow = option.stock <= option.minimumStock;
+                                                final codeStr = (option.barcode != null && option.barcode!.isNotEmpty)
+                                                    ? option.barcode!
+                                                    : '#${option.productId ?? "-"}';
                                                 return ListTile(
-                                                  title: Text(option.productName, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-                                                  subtitle: Text('Stock: ${option.stock} ${option.unit ?? "pcs"} | Price: ₹${option.sellingPrice}', style: TextStyle(color: isDark ? Colors.white70 : Colors.grey.shade600)),
+                                                  title: Text(
+                                                    option.productName,
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      color: isDark ? Colors.white : Colors.black87,
+                                                    ),
+                                                  ),
+                                                  subtitle: Text(
+                                                    'Code: $codeStr | Stock: ${option.stock} ${option.unit ?? "pcs"} | Price: ₹${option.sellingPrice}',
+                                                    style: TextStyle(color: isDark ? Colors.white70 : Colors.grey.shade600),
+                                                  ),
                                                   trailing: isLow
-                                                      ? const Chip(label: Text('Low Stock', style: TextStyle(color: Colors.white, fontSize: 10)), backgroundColor: Colors.orange)
+                                                      ? const Chip(
+                                                          label: Text('Low Stock', style: TextStyle(color: Colors.white, fontSize: 10)),
+                                                          backgroundColor: Colors.orange,
+                                                        )
                                                       : null,
                                                   onTap: () {
                                                     onSelected(option);

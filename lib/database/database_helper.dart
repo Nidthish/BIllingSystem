@@ -71,11 +71,11 @@ class DatabaseHelper {
     try { await db.execute('ALTER TABLE settings ADD COLUMN bank_name TEXT;'); } catch (_) {}
     try { await db.execute('ALTER TABLE settings ADD COLUMN account_type TEXT;'); } catch (_) {}
 
-    // Wipe old sample data if present and populate new translated official SK Masala catalog
+    // Wipe old sample data if present and populate new 572 weight-variant SK Masala catalog
     try {
-      final catalogCheck = await db.rawQuery("SELECT COUNT(*) as count FROM products WHERE barcode = 'SKMI001'");
+      final catalogCheck = await db.rawQuery("SELECT COUNT(*) as count FROM products");
       final count = (catalogCheck.first.values.first as num?)?.toInt() ?? 0;
-      if (count == 0) {
+      if (count != 572) {
         await db.execute('DELETE FROM sale_items;');
         await db.execute('DELETE FROM sales;');
         await db.execute('DELETE FROM products;');

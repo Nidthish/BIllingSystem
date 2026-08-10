@@ -14,10 +14,12 @@ class ProductProvider with ChangeNotifier {
   int? get selectedCategoryId => _selectedCategoryId;
 
   List<Product> get filteredProducts {
+    final query = _searchQuery.trim().toLowerCase();
     return _products.where((p) {
-      final matchesSearch = _searchQuery.isEmpty ||
-          p.productName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          (p.barcode != null && p.barcode!.contains(_searchQuery));
+      final matchesSearch = query.isEmpty ||
+          p.productName.toLowerCase().contains(query) ||
+          (p.barcode != null && p.barcode!.toLowerCase().contains(query)) ||
+          (p.productId != null && p.productId.toString() == query);
       final matchesCategory = _selectedCategoryId == null || p.categoryId == _selectedCategoryId;
       return matchesSearch && matchesCategory;
     }).toList();
