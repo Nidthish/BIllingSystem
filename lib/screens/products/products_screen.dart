@@ -494,9 +494,7 @@ class ProductsScreen extends StatelessWidget {
                                         orElse: () => Category(categoryName: 'Unassigned'),
                                       )
                                       .categoryName;
-                                  final codeStr = (product.barcode != null && product.barcode!.isNotEmpty)
-                                      ? product.barcode!
-                                      : '#${product.productId ?? '-'}';
+                                  final codeStr = product.codeOrId.isNotEmpty ? product.codeOrId : '#${product.productId ?? '-'}';
 
                                   return DataRow(
                                     cells: [

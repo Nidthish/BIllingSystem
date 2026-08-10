@@ -683,7 +683,10 @@ class _BillingScreenState extends State<BillingScreen> {
                                         return nameMatch || codeMatch || idMatch;
                                       });
                                     },
-                                    displayStringForOption: (Product option) => option.productName,
+                                    displayStringForOption: (Product option) {
+                                      final code = option.codeOrId;
+                                      return code.isNotEmpty ? '${option.productName} ($code)' : option.productName;
+                                    },
                                     fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
                                       return TextField(
                                         controller: controller,
@@ -693,6 +696,41 @@ class _BillingScreenState extends State<BillingScreen> {
                                           prefixIcon: Icon(Icons.search),
                                           suffixIcon: Icon(Icons.arrow_drop_down),
                                         ),
+                                        onSubmitted: (value) {
+                                          final query = value.trim().toLowerCase();
+                                          if (query.isNotEmpty) {
+                                            final matches = products.where((p) {
+                                              final nameLower = p.productName.toLowerCase();
+                                              final codeLower = p.codeOrId.toLowerCase();
+                                              final barcodeLower = (p.barcode ?? '').toLowerCase();
+                                              final idStr = p.productId != null ? p.productId.toString() : '';
+                                              return codeLower == query ||
+                                                  barcodeLower == query ||
+                                                  idStr == query ||
+                                                  '#$idStr' == query ||
+                                                  nameLower == query ||
+                                                  nameLower.contains(query) ||
+                                                  codeLower.contains(query);
+                                            }).toList();
+
+                                            if (matches.isNotEmpty) {
+                                              final exactMatch = matches.firstWhere(
+                                                (p) =>
+                                                    p.codeOrId.toLowerCase() == query ||
+                                                    (p.barcode ?? '').toLowerCase() == query ||
+                                                    p.productId.toString() == query,
+                                                orElse: () => matches.first,
+                                              );
+                                              setState(() {
+                                                _selectedProduct = exactMatch;
+                                                controller.text = exactMatch.codeOrId.isNotEmpty
+                                                    ? '${exactMatch.productName} (${exactMatch.codeOrId})'
+                                                    : exactMatch.productName;
+                                              });
+                                              onFieldSubmitted();
+                                            }
+                                          }
+                                        },
                                       );
                                     },
                                     optionsViewBuilder: (context, onSelected, options) {
