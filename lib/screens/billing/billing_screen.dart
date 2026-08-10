@@ -22,7 +22,7 @@ class BillingScreen extends StatefulWidget {
 }
 
 class _BillingScreenState extends State<BillingScreen> {
-  bool _isWalkIn = false;
+  bool _isWalkIn = true;
   bool _saveCustomerForFuture = false;
   bool _isProcessing = false;
 
@@ -30,11 +30,13 @@ class _BillingScreenState extends State<BillingScreen> {
   final TextEditingController _walkInNameController = TextEditingController();
   final TextEditingController _walkInPhoneController = TextEditingController();
   final TextEditingController _walkInAddressController = TextEditingController();
+  final TextEditingController _walkInGstController = TextEditingController();
 
   Product? _selectedProduct;
   final TextEditingController _productSearchController = TextEditingController();
   final FocusNode _productSearchFocusNode = FocusNode();
-  final TextEditingController _qtyController = TextEditingController(text: '1');
+  final TextEditingController _priceController = TextEditingController(text: '0.0');
+  final TextEditingController _qtyController = TextEditingController(text: '1000');
   final TextEditingController _gstRateController = TextEditingController(text: '5.0');
   
   final List<SaleItem> _cart = [];
@@ -53,8 +55,10 @@ class _BillingScreenState extends State<BillingScreen> {
     _walkInNameController.dispose();
     _walkInPhoneController.dispose();
     _walkInAddressController.dispose();
+    _walkInGstController.dispose();
     _productSearchController.dispose();
     _productSearchFocusNode.dispose();
+    _priceController.dispose();
     _qtyController.dispose();
     _gstRateController.dispose();
     super.dispose();
@@ -66,8 +70,11 @@ class _BillingScreenState extends State<BillingScreen> {
       return;
     }
     
-    double qty = double.tryParse(_qtyController.text) ?? 1;
-    if (qty <= 0) qty = 1;
+    double qtyGrams = double.tryParse(_qtyController.text) ?? 1000.0;
+    if (qtyGrams <= 0) qtyGrams = 1000.0;
+
+    double customPrice = double.tryParse(_priceController.text) ?? _selectedProduct!.sellingPrice;
+    if (customPrice < 0) customPrice = 0.0;
 
     // Stock & Product Limit Validation
     int currentCartQty = 0;
@@ -84,43 +91,146 @@ class _BillingScreenState extends State<BillingScreen> {
       return;
     }
 
-    if (_selectedProduct!.stock < (currentCartQty + qty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Cannot add! Available stock for ${_selectedProduct!.productName} is ${_selectedProduct!.stock}'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    double price = _selectedProduct!.sellingPrice;
-    double total = price * qty;
+    double total = (customPrice / 1000.0) * qtyGrams;
 
     setState(() {
       if (existingIndex >= 0) {
         final existing = _cart[existingIndex];
-        final newQty = existing.quantity + qty;
+        final newQtyGrams = existing.quantity + qtyGrams;
+        final newTotal = (customPrice / 1000.0) * newQtyGrams;
         _cart[existingIndex] = SaleItem(
           saleId: 0,
           productId: existing.productId,
-          quantity: newQty,
-          price: existing.price,
-          total: existing.price * newQty,
+          quantity: newQtyGrams,
+          price: customPrice,
+          total: newTotal,
         );
       } else {
         _cart.add(SaleItem(
           saleId: 0,
           productId: _selectedProduct!.productId!,
-          quantity: qty,
-          price: price,
+          quantity: qtyGrams,
+          price: customPrice,
           total: total,
         ));
       }
       _selectedProduct = null;
       _productSearchController.clear();
-      _qtyController.text = '1';
+      _priceController.text = '0.0';
+      _qtyController.text = '1000';
     });
+  }
+
+  void _editCartItemDialog(int index) {
+    final item = _cart[index];
+    final products = context.read<ProductProvider>().products;
+    final productList = products.where((p) => p.productId == item.productId);
+    final productName = productList.isNotEmpty ? productList.first.productName : 'Product #${item.productId}';
+
+    final editPriceController = TextEditingController(text: item.price.toStringAsFixed(2));
+    final editQtyController = TextEditingController(text: item.quantity.toInt().toString());
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            double p = double.tryParse(editPriceController.text) ?? item.price;
+            double q = double.tryParse(editQtyController.text) ?? item.quantity;
+            double calcTotal = (p / 1000.0) * q;
+
+            return AlertDialog(
+              title: Text('Edit - $productName'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: editPriceController,
+                      decoration: const InputDecoration(
+                        labelText: 'Price (₹ per kg / 1000g)',
+                        prefixIcon: Icon(Icons.currency_rupee),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) => setDialogState(() {}),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: editQtyController,
+                      decoration: const InputDecoration(
+                        labelText: 'Quantity (in Grams / g)',
+                        prefixIcon: Icon(Icons.scale),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) => setDialogState(() {}),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      children: [100, 250, 500, 1000].map((gramVal) {
+                        return ActionChip(
+                          label: Text('${gramVal}g'),
+                          onPressed: () {
+                            editQtyController.text = gramVal.toString();
+                            setDialogState(() {});
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE6F4EA),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Item Total:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text(
+                            '₹${calcTotal.toStringAsFixed(2)}',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF00875A)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00875A)),
+                  onPressed: () {
+                    final newPrice = double.tryParse(editPriceController.text) ?? item.price;
+                    final newQty = double.tryParse(editQtyController.text) ?? item.quantity;
+                    if (newQty <= 0) {
+                      _removeFromCart(index);
+                    } else {
+                      setState(() {
+                        _cart[index] = SaleItem(
+                          saleId: item.saleId,
+                          productId: item.productId,
+                          quantity: newQty,
+                          price: newPrice,
+                          total: (newPrice / 1000.0) * newQty,
+                        );
+                      });
+                    }
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Update'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   void _updateQuantity(int index, double newQty) {
@@ -130,26 +240,13 @@ class _BillingScreenState extends State<BillingScreen> {
     }
 
     final item = _cart[index];
-    final products = context.read<ProductProvider>().products;
-    final productList = products.where((p) => p.productId == item.productId);
-    
-    if (productList.isNotEmpty) {
-      final product = productList.first;
-      if (product.stock < newQty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Stock limit reached! Max available: ${product.stock}')),
-        );
-        return;
-      }
-    }
-
     setState(() {
       _cart[index] = SaleItem(
         saleId: item.saleId,
         productId: item.productId,
         quantity: newQty,
         price: item.price,
-        total: item.price * newQty,
+        total: (item.price / 1000.0) * newQty,
       );
     });
   }
@@ -193,6 +290,10 @@ class _BillingScreenState extends State<BillingScreen> {
     String customerAddress = '';
     int? customerId;
 
+    final String? customerGst = _isWalkIn
+        ? (_walkInGstController.text.trim().isNotEmpty ? _walkInGstController.text.trim() : null)
+        : _selectedCustomer?.gstNumber;
+
     if (_isWalkIn) {
       customerName = _walkInNameController.text.trim();
       customerPhone = _walkInPhoneController.text.trim();
@@ -227,6 +328,7 @@ class _BillingScreenState extends State<BillingScreen> {
           customerName: customerName.isEmpty ? 'Walk-in Customer' : customerName,
           phone: customerPhone,
           address: customerAddress,
+          gstNumber: customerGst,
         );
         customerId = await context.read<CustomerProvider>().addCustomer(newCust);
       }
@@ -302,7 +404,7 @@ class _BillingScreenState extends State<BillingScreen> {
         customerName: customerName,
         customerPhone: customerPhone,
         customerAddress: customerAddress,
-        customerGst: _selectedCustomer?.gstNumber,
+        customerGst: customerGst,
         settings: activeSettings,
         allProducts: productProvider.products,
       );
@@ -320,7 +422,9 @@ class _BillingScreenState extends State<BillingScreen> {
         _walkInNameController.clear();
         _walkInPhoneController.clear();
         _walkInAddressController.clear();
+        _walkInGstController.clear();
         _saveCustomerForFuture = false;
+        _isWalkIn = true;
         _isProcessing = false;
       });
 
@@ -333,7 +437,7 @@ class _BillingScreenState extends State<BillingScreen> {
           customerName: customerName,
           customerPhone: customerPhone,
           customerAddress: customerAddress,
-          customerGst: _selectedCustomer?.gstNumber,
+          customerGst: customerGst,
           settings: activeSettings,
           allProducts: productProvider.products,
         );
@@ -625,12 +729,28 @@ class _BillingScreenState extends State<BillingScreen> {
                                 ],
                               ),
                               const SizedBox(height: 12),
-                              TextField(
-                                controller: _walkInAddressController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Address',
-                                  prefixIcon: Icon(Icons.location_on_outlined),
-                                ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _walkInAddressController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Address',
+                                        prefixIcon: Icon(Icons.location_on_outlined),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _walkInGstController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'GST Number (Optional)',
+                                        prefixIcon: Icon(Icons.receipt_long),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 8),
                               CheckboxListTile(
@@ -783,27 +903,60 @@ class _BillingScreenState extends State<BillingScreen> {
                                       );
                                     },
                                     onSelected: (Product selection) {
-                                      setState(() => _selectedProduct = selection);
+                                      setState(() {
+                                        _selectedProduct = selection;
+                                        _priceController.text = selection.sellingPrice.toStringAsFixed(2);
+                                      });
                                     },
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: 8),
                                 SizedBox(
-                                  width: 90,
+                                  width: 100,
                                   child: TextField(
-                                    controller: _qtyController,
-                                    decoration: const InputDecoration(labelText: 'Qty'),
+                                    controller: _priceController,
+                                    decoration: const InputDecoration(labelText: 'Price (₹/kg)'),
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: 8),
+                                SizedBox(
+                                  width: 110,
+                                  child: TextField(
+                                    controller: _qtyController,
+                                    decoration: const InputDecoration(labelText: 'Qty (Grams)'),
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
                                 ElevatedButton.icon(
                                   icon: const Icon(Icons.add_shopping_cart),
                                   label: const Text('Add'),
                                   style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                                   ),
                                   onPressed: _addToCart,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                const Text('Quick Grams: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                const SizedBox(width: 8),
+                                Wrap(
+                                  spacing: 6,
+                                  children: [100, 250, 500, 1000].map((gramVal) {
+                                    return ActionChip(
+                                      padding: EdgeInsets.zero,
+                                      label: Text('${gramVal}g', style: const TextStyle(fontSize: 12)),
+                                      onPressed: () {
+                                        setState(() {
+                                          _qtyController.text = gramVal.toString();
+                                        });
+                                      },
+                                    );
+                                  }).toList(),
                                 ),
                               ],
                             ),
@@ -891,30 +1044,18 @@ class _BillingScreenState extends State<BillingScreen> {
                                             ),
                                           ),
                                           Text(
-                                            '₹${item.price} each',
+                                            '₹${item.price.toStringAsFixed(2)}/kg  |  ${item.quantity.toInt()}g',
                                             style: TextStyle(color: isDark ? Colors.white70 : Colors.grey.shade600, fontSize: 12),
                                           ),
                                         ],
                                       ),
                                     ),
-                                    // Quantity Controls (+, -, Direct text)
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          icon: Icon(Icons.remove_circle_outline, size: 20, color: isDark ? Colors.white70 : Colors.black54),
-                                          onPressed: () => _updateQuantity(index, item.quantity - 1),
-                                        ),
-                                        Text(
-                                          '${item.quantity}',
-                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.black87),
-                                        ),
-                                        IconButton(
-                                          icon: Icon(Icons.add_circle_outline, size: 20, color: isDark ? Colors.white70 : Colors.black54),
-                                          onPressed: () => _updateQuantity(index, item.quantity + 1),
-                                        ),
-                                      ],
+                                    IconButton(
+                                      icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                                      tooltip: 'Edit Price / Grams',
+                                      onPressed: () => _editCartItemDialog(index),
                                     ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: 4),
                                     SizedBox(
                                       width: 80,
                                       child: Text(

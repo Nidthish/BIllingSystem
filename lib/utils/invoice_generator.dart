@@ -271,8 +271,8 @@ class InvoiceGenerator {
                     final index = entry.key;
                     final item = entry.value;
                     final pName = productMap[item.productId] ?? 'Item #${item.productId}';
-                    final qtyStr = item.quantity % 1 == 0 ? item.quantity.toInt().toString() : item.quantity.toString();
-                    final rateStr = item.price.toStringAsFixed(0);
+                    final qtyStr = item.quantity % 1 == 0 ? '${item.quantity.toInt()}g' : '${item.quantity.toStringAsFixed(1)}g';
+                    final rateStr = item.price % 1 == 0 ? item.price.toInt().toString() : item.price.toStringAsFixed(2);
                     final totalStr = 'Rs.${item.total.toStringAsFixed(item.total % 1 == 0 ? 0 : 2)}';
                     final isCompact = items.length > 18;
 
