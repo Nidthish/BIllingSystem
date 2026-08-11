@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../database/database_helper.dart';
+import '../../models/settings.dart';
 import '../../providers/sales_analysis_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../utils/reports_pdf_generator.dart';
@@ -28,10 +30,24 @@ class _SalesAnalysisTabState extends State<SalesAnalysisTab> {
     });
   }
 
-  void _printReport() {
+  Future<Settings> _getSettings() async {
+    return context.read<SettingsProvider>().settings ??
+        await DatabaseHelper.instance.getSettings() ??
+        Settings(
+          shopName: 'MS TRADERS',
+          address: 'No.144A, Mariyam Fathima Building, E.B.Road, Trichy',
+          phone: '7708906866',
+          gstNumber: '33CXGPS6190A1ZI',
+          fssaiNumber: '22421591000206',
+          invoicePrefix: 'INV',
+        );
+  }
+
+  void _printReport() async {
     final provider = context.read<SalesAnalysisProvider>();
-    final settings = context.read<SettingsProvider>().settings;
-    if (settings == null) return;
+    final settings = await _getSettings();
+    if (!mounted) return;
+
     PrintOptionsDialog.showReportDialog(
       parentContext: context,
       reportTitle: 'Sales Analysis Report',
@@ -51,8 +67,9 @@ class _SalesAnalysisTabState extends State<SalesAnalysisTab> {
 
   Future<void> _exportPdf() async {
     final provider = context.read<SalesAnalysisProvider>();
-    final settings = context.read<SettingsProvider>().settings;
-    if (settings == null) return;
+    final settings = await _getSettings();
+    if (!mounted) return;
+
     try {
       final path = await ReportsPdfGenerator.exportSalesAnalysisPdf(
         rows: provider.analysisRows,
@@ -61,9 +78,21 @@ class _SalesAnalysisTabState extends State<SalesAnalysisTab> {
         settings: settings,
         generatedBy: 'Admin',
       );
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('PDF saved: $path')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF Report Saved Successfully:\n$path'),
+            backgroundColor: const Color(0xFF00875A),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PDF Error: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -75,9 +104,21 @@ class _SalesAnalysisTabState extends State<SalesAnalysisTab> {
         filter: provider.filter,
         summary: provider.summary,
       );
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Excel saved: $path')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Excel Report Saved Successfully:\n$path'),
+            backgroundColor: const Color(0xFF00875A),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Excel Error: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 

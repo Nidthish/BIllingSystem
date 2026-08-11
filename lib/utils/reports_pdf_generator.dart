@@ -483,60 +483,55 @@ class ReportsPdfGenerator {
             ),
           ),
           pw.SizedBox(height: 10),
-          // Table
-          pw.Table(
+          // Table (Repeats column headers automatically on every page!)
+          pw.TableHelper.fromTextArray(
             border: pw.TableBorder.all(color: _borderColor, width: 0.5),
             columnWidths: colWidths,
-            children: [
-              // Header row
-              pw.TableRow(
-                decoration: const pw.BoxDecoration(color: _headerBg),
-                children: [
-                  _cell('#', bold: true, color: PdfColors.white, align: pw.TextAlign.center, bg: null, fontSize: 7.5),
-                  _cell('Code / ID', bold: true, color: PdfColors.white, bg: null, fontSize: 7.5),
-                  _cell('Product Name', bold: true, color: PdfColors.white, bg: null, fontSize: 7.5),
-                  _cell('Category', bold: true, color: PdfColors.white, bg: null, fontSize: 7.5),
-                  _cell('Unit', bold: true, color: PdfColors.white, align: pw.TextAlign.center, bg: null, fontSize: 7.5),
-                  _cell('Stock', bold: true, color: PdfColors.white, align: pw.TextAlign.right, bg: null, fontSize: 7.5),
-                  _cell('Min Stk', bold: true, color: PdfColors.white, align: pw.TextAlign.right, bg: null, fontSize: 7.5),
-                  _cell('Buy Price', bold: true, color: PdfColors.white, align: pw.TextAlign.right, bg: null, fontSize: 7.5),
-                  _cell('Sell Price', bold: true, color: PdfColors.white, align: pw.TextAlign.right, bg: null, fontSize: 7.5),
-                  _cell('Status', bold: true, color: PdfColors.white, align: pw.TextAlign.center, bg: null, fontSize: 7.5),
-                ],
-              ),
-              // Data rows
-              ...products.asMap().entries.map((entry) {
-                final i = entry.key;
-                final p = entry.value;
-                final stk = (p.stock as num?)?.toInt() ?? 0;
-                final minStk = (p.minimumStock as num?)?.toInt() ?? 0;
-                final isLow = stk <= minStk;
-                final bg = isLow ? const PdfColor.fromInt(0xFFFFF3CD) : (i.isEven ? null : _rowAlt);
-                final barcode = p.barcode as String?;
-                final codeStr = (barcode != null && barcode.isNotEmpty)
-                    ? barcode
-                    : '#${p.productId ?? '-'}';
-                final catId = (p.categoryId as num?)?.toInt();
-                final catName = catId != null ? (catMap[catId] ?? 'Unassigned') : 'Unassigned';
-                final prodName = (p.productName as String?) ?? 'Unnamed';
-                final unitStr = (p.unit as String?) ?? 'pcs';
-                final purchasePrice = (p.purchasePrice as num?)?.toDouble() ?? 0.0;
-                final sellingPrice = (p.sellingPrice as num?)?.toDouble() ?? 0.0;
+            headerDecoration: const pw.BoxDecoration(color: _headerBg),
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 7.5),
+            cellStyle: const pw.TextStyle(fontSize: 7),
+            cellAlignment: pw.Alignment.centerLeft,
+            cellAlignments: const {
+              0: pw.Alignment.center,
+              1: pw.Alignment.centerLeft,
+              2: pw.Alignment.centerLeft,
+              3: pw.Alignment.centerLeft,
+              4: pw.Alignment.center,
+              5: pw.Alignment.centerRight,
+              6: pw.Alignment.centerRight,
+              7: pw.Alignment.centerRight,
+              8: pw.Alignment.centerRight,
+              9: pw.Alignment.center,
+            },
+            headers: ['#', 'Code / ID', 'Product Name', 'Category', 'Unit', 'Stock', 'Min Stk', 'Buy Price', 'Sell Price', 'Status'],
+            data: products.asMap().entries.map((entry) {
+              final i = entry.key;
+              final p = entry.value;
+              final stk = (p.stock as num?)?.toInt() ?? 0;
+              final minStk = (p.minimumStock as num?)?.toInt() ?? 0;
+              final isLow = stk <= minStk;
+              final barcode = p.barcode as String?;
+              final codeStr = (barcode != null && barcode.isNotEmpty) ? barcode : '#${p.productId ?? '-'}';
+              final catId = (p.categoryId as num?)?.toInt();
+              final catName = catId != null ? (catMap[catId] ?? 'Unassigned') : 'Unassigned';
+              final prodName = (p.productName as String?) ?? 'Unnamed';
+              final unitStr = (p.unit as String?) ?? 'pcs';
+              final purchasePrice = (p.purchasePrice as num?)?.toDouble() ?? 0.0;
+              final sellingPrice = (p.sellingPrice as num?)?.toDouble() ?? 0.0;
 
-                return pw.TableRow(children: [
-                  _cell('${i + 1}', align: pw.TextAlign.center, bg: bg, fontSize: 7),
-                  _cell(codeStr, bg: bg, fontSize: 7, bold: true),
-                  _cell(prodName, bg: bg, fontSize: 7, bold: true),
-                  _cell(catName, bg: bg, fontSize: 7),
-                  _cell(unitStr, align: pw.TextAlign.center, bg: bg, fontSize: 7),
-                  _cell('$stk', align: pw.TextAlign.right, bg: bg, fontSize: 7, color: isLow ? PdfColors.red700 : null, bold: isLow),
-                  _cell('$minStk', align: pw.TextAlign.right, bg: bg, fontSize: 7),
-                  _cell('Rs. ${_numFmt.format(purchasePrice)}', align: pw.TextAlign.right, bg: bg, fontSize: 7),
-                  _cell('Rs. ${_numFmt.format(sellingPrice)}', align: pw.TextAlign.right, bg: bg, fontSize: 7, bold: true),
-                  _cell(isLow ? 'LOW' : 'OK', align: pw.TextAlign.center, bg: bg, fontSize: 7, bold: true, color: isLow ? PdfColors.red700 : PdfColors.green800),
-                ]);
-              }),
-            ],
+              return [
+                '${i + 1}',
+                codeStr,
+                prodName,
+                catName,
+                unitStr,
+                '$stk',
+                '$minStk',
+                'Rs. ${_numFmt.format(purchasePrice)}',
+                'Rs. ${_numFmt.format(sellingPrice)}',
+                isLow ? 'LOW' : 'OK',
+              ];
+            }).toList(),
           ),
           pw.SizedBox(height: 16),
           _buildSignatureSection(),
@@ -784,41 +779,33 @@ class ReportsPdfGenerator {
       colWidths[i] = pw.FixedColumnWidth(columns[i].width);
     }
 
-    return pw.Table(
+    return pw.TableHelper.fromTextArray(
       border: pw.TableBorder.all(color: _borderColor, width: 0.5),
       columnWidths: colWidths,
-      children: [
-        // Header
-        pw.TableRow(
-          decoration: const pw.BoxDecoration(color: _headerBg),
-          children: columns.map((c) => _cell(c.label, bold: true, color: PdfColors.white, align: c.align, bg: null, fontSize: 7.5)).toList(),
-        ),
-        // Data rows
-        ...rows.asMap().entries.map((entry) {
-          final i = entry.key;
-          final row = entry.value;
-          final bg = i.isEven ? null : _rowAlt;
-          final cells = <pw.Widget>[
-            _cell('${i + 1}', align: pw.TextAlign.center, bg: bg, fontSize: 7),
-            _cell(row.groupLabel, align: pw.TextAlign.left, bg: bg, bold: true, fontSize: 7),
-            _cell(row.categoryName, align: pw.TextAlign.left, bg: bg, fontSize: 7),
-          ];
-          if (opts.showQtySold) cells.add(_cell(_qtyFmt.format(row.qtySold), align: pw.TextAlign.right, bg: bg, fontSize: 7));
-          if (opts.showSaleAmount) cells.add(_cell('Rs. ${_numFmt.format(row.saleAmount)}', align: pw.TextAlign.right, bg: bg, fontSize: 7));
-          if (opts.showGst) cells.add(_cell('Rs. ${_numFmt.format(row.gstAmount)}', align: pw.TextAlign.right, bg: bg, fontSize: 7));
-          if (opts.showDiscount) cells.add(_cell('Rs. ${_numFmt.format(row.discount)}', align: pw.TextAlign.right, bg: bg, fontSize: 7));
-          if (opts.showPurchaseCost) cells.add(_cell('Rs. ${_numFmt.format(row.purchaseCost)}', align: pw.TextAlign.right, bg: bg, fontSize: 7));
-          if (opts.showProfit) {
-            final profitColor = row.profit >= 0 ? PdfColors.green800 : PdfColors.red800;
-            cells.add(_cell('Rs. ${_numFmt.format(row.profit)}', align: pw.TextAlign.right, bg: bg, fontSize: 7, color: profitColor));
-          }
-          if (opts.showAvgSellingPrice) cells.add(_cell('Rs. ${_numFmt.format(row.avgSellingPrice)}', align: pw.TextAlign.right, bg: bg, fontSize: 7));
-          if (opts.showFinalAmount) cells.add(_cell('Rs. ${_numFmt.format(row.finalAmount)}', align: pw.TextAlign.right, bg: bg, bold: true, fontSize: 7));
-          if (opts.showAvgProfit) cells.add(_cell('Rs. ${_numFmt.format(row.avgProfit)}', align: pw.TextAlign.right, bg: bg, fontSize: 7));
-          cells.add(_cell('${row.invoiceCount}', align: pw.TextAlign.center, bg: bg, fontSize: 7));
-          return pw.TableRow(children: cells);
-        }),
-      ],
+      headerDecoration: const pw.BoxDecoration(color: _headerBg),
+      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 7.5),
+      cellStyle: const pw.TextStyle(fontSize: 7),
+      headers: columns.map((c) => c.label).toList(),
+      data: rows.asMap().entries.map((entry) {
+        final i = entry.key;
+        final row = entry.value;
+        final cells = <String>[
+          '${i + 1}',
+          row.groupLabel,
+          row.categoryName,
+        ];
+        if (opts.showQtySold) cells.add(_qtyFmt.format(row.qtySold));
+        if (opts.showSaleAmount) cells.add('Rs. ${_numFmt.format(row.saleAmount)}');
+        if (opts.showGst) cells.add('Rs. ${_numFmt.format(row.gstAmount)}');
+        if (opts.showDiscount) cells.add('Rs. ${_numFmt.format(row.discount)}');
+        if (opts.showPurchaseCost) cells.add('Rs. ${_numFmt.format(row.purchaseCost)}');
+        if (opts.showProfit) cells.add('Rs. ${_numFmt.format(row.profit)}');
+        if (opts.showAvgSellingPrice) cells.add('Rs. ${_numFmt.format(row.avgSellingPrice)}');
+        if (opts.showFinalAmount) cells.add('Rs. ${_numFmt.format(row.finalAmount)}');
+        if (opts.showAvgProfit) cells.add('Rs. ${_numFmt.format(row.avgProfit)}');
+        cells.add('${row.invoiceCount}');
+        return cells;
+      }).toList(),
     );
   }
 
@@ -868,42 +855,29 @@ class ReportsPdfGenerator {
       8: const pw.FixedColumnWidth(80),
     };
 
-    return pw.Table(
+    return pw.TableHelper.fromTextArray(
       border: pw.TableBorder.all(color: _borderColor, width: 0.5),
       columnWidths: colWidths,
-      children: [
-        pw.TableRow(
-          decoration: const pw.BoxDecoration(color: _headerBg),
-          children: [
-            _cell('#', bold: true, color: PdfColors.white, align: pw.TextAlign.center, bg: null, fontSize: 7.5),
-            _cell('Invoice No', bold: true, color: PdfColors.white, bg: null, fontSize: 7.5),
-            _cell('Date', bold: true, color: PdfColors.white, bg: null, fontSize: 7.5),
-            _cell('Customer', bold: true, color: PdfColors.white, bg: null, fontSize: 7.5),
-            _cell('Payment', bold: true, color: PdfColors.white, align: pw.TextAlign.center, bg: null, fontSize: 7.5),
-            _cell('Subtotal', bold: true, color: PdfColors.white, align: pw.TextAlign.right, bg: null, fontSize: 7.5),
-            _cell('GST', bold: true, color: PdfColors.white, align: pw.TextAlign.right, bg: null, fontSize: 7.5),
-            _cell('Discount', bold: true, color: PdfColors.white, align: pw.TextAlign.right, bg: null, fontSize: 7.5),
-            _cell('Grand Total', bold: true, color: PdfColors.white, align: pw.TextAlign.right, bg: null, fontSize: 7.5),
-          ],
-        ),
-        ...sales.asMap().entries.map((entry) {
-          final i = entry.key;
-          final sale = entry.value;
-          final bg = i.isEven ? null : _rowAlt;
-          final dateStr = _dateFmt.format(DateTime.tryParse(sale.date) ?? DateTime.now());
-          return pw.TableRow(children: [
-            _cell('${i + 1}', align: pw.TextAlign.center, bg: bg, fontSize: 7),
-            _cell(sale.invoiceNo, bold: true, bg: bg, fontSize: 7),
-            _cell(dateStr, bg: bg, fontSize: 7),
-            _cell(sale.customerName ?? 'Walk-in', bg: bg, fontSize: 7),
-            _cell(sale.paymentMethod ?? 'Cash', align: pw.TextAlign.center, bg: bg, fontSize: 7),
-            _cell('Rs. ${_numFmt.format(sale.subtotal)}', align: pw.TextAlign.right, bg: bg, fontSize: 7),
-            _cell('Rs. ${_numFmt.format(sale.gst)}', align: pw.TextAlign.right, bg: bg, fontSize: 7),
-            _cell('Rs. ${_numFmt.format(sale.discount)}', align: pw.TextAlign.right, bg: bg, fontSize: 7),
-            _cell('Rs. ${_numFmt.format(sale.grandTotal)}', align: pw.TextAlign.right, bg: bg, bold: true, fontSize: 7),
-          ]);
-        }),
-      ],
+      headerDecoration: const pw.BoxDecoration(color: _headerBg),
+      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 7.5),
+      cellStyle: const pw.TextStyle(fontSize: 7),
+      headers: ['#', 'Invoice No', 'Date', 'Customer', 'Payment', 'Subtotal', 'GST', 'Discount', 'Grand Total'],
+      data: sales.asMap().entries.map((entry) {
+        final i = entry.key;
+        final sale = entry.value;
+        final dateStr = _dateFmt.format(DateTime.tryParse(sale.date) ?? DateTime.now());
+        return [
+          '${i + 1}',
+          sale.invoiceNo,
+          dateStr,
+          sale.customerName ?? 'Walk-in',
+          sale.paymentMethod ?? 'Cash',
+          'Rs. ${_numFmt.format(sale.subtotal)}',
+          'Rs. ${_numFmt.format(sale.gst)}',
+          'Rs. ${_numFmt.format(sale.discount)}',
+          'Rs. ${_numFmt.format(sale.grandTotal)}',
+        ];
+      }).toList(),
     );
   }
 

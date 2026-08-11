@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../models/sale.dart';
 import '../models/sales_analysis_row.dart';
 import '../models/report_filter_model.dart';
+import 'app_folder_storage.dart';
 
 /// Generates Excel exports for Invoice and Sales Analysis reports.
 /// Architecture is ready for CSV support as well.
@@ -131,15 +132,21 @@ class ReportsExcelGenerator {
   }
 
   static Future<String> _save(Excel excel, String baseName) async {
+    final fileBytes = excel.encode() ?? excel.save();
+    if (fileBytes != null) {
+      final savedFile = await AppFolderStorage.saveReportExcel(fileBytes, baseName);
+      return savedFile.path;
+    }
     final dir = await getApplicationDocumentsDirectory();
     final fileName = '${baseName}_${DateTime.now().millisecondsSinceEpoch}.xlsx';
     final filePath = p.join(dir.path, fileName);
-    final fileBytes = excel.save();
-    if (fileBytes != null) {
+    final bytes = excel.save();
+    if (bytes != null) {
       File(filePath)
         ..createSync(recursive: true)
-        ..writeAsBytesSync(fileBytes);
+        ..writeAsBytesSync(bytes);
+      return filePath;
     }
-    return filePath;
+    throw Exception('Failed to encode Excel file.');
   }
 }
