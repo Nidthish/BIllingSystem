@@ -9,10 +9,31 @@ class CategoryProvider with ChangeNotifier {
   List<Category> get categories => _categories;
   bool get isLoading => _isLoading;
 
+  static const List<String> _desiredCategoryOrder = [
+    'masala varieties',
+    'masala ingredients',
+    'flour varieties',
+    'aroma masala ingredients',
+    'dal varieties',
+    'cashew varieties',
+    'dry fruits',
+  ];
+
   Future<void> loadCategories() async {
     _isLoading = true;
     notifyListeners();
-    _categories = await DatabaseHelper.instance.getCategories();
+    final list = await DatabaseHelper.instance.getCategories();
+    list.sort((a, b) {
+      final nameA = a.categoryName.trim().toLowerCase();
+      final nameB = b.categoryName.trim().toLowerCase();
+      final idxA = _desiredCategoryOrder.indexOf(nameA);
+      final idxB = _desiredCategoryOrder.indexOf(nameB);
+      if (idxA != -1 && idxB != -1) return idxA.compareTo(idxB);
+      if (idxA != -1) return -1;
+      if (idxB != -1) return 1;
+      return (a.categoryId ?? 0).compareTo(b.categoryId ?? 0);
+    });
+    _categories = list;
     _isLoading = false;
     notifyListeners();
   }

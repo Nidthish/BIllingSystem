@@ -106,17 +106,21 @@ class SalesTrendChart extends StatelessWidget {
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 30,
+                      reservedSize: 32,
+                      interval: (sortedKeys.length / 6).ceilToDouble().clamp(1.0, 100.0),
                       getTitlesWidget: (value, meta) {
                         int index = value.toInt();
-                        if (index >= 0 && index < sortedKeys.length) {
+                        if (index >= 0 && index < sortedKeys.length && value == index.toDouble()) {
                           DateTime date = DateTime.parse(sortedKeys[index]);
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(DateFormat('dd MMM').format(date), style: const TextStyle(fontSize: 10)),
+                            child: Text(
+                              DateFormat('dd MMM').format(date),
+                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+                            ),
                           );
                         }
-                        return const Text('');
+                        return const SizedBox.shrink();
                       },
                     ),
                   ),

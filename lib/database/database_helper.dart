@@ -70,6 +70,7 @@ class DatabaseHelper {
     try { await db.execute('ALTER TABLE settings ADD COLUMN branch TEXT;'); } catch (_) {}
     try { await db.execute('ALTER TABLE settings ADD COLUMN bank_name TEXT;'); } catch (_) {}
     try { await db.execute('ALTER TABLE settings ADD COLUMN account_type TEXT;'); } catch (_) {}
+    try { await db.execute('ALTER TABLE settings ADD COLUMN fssai_number TEXT;'); } catch (_) {}
 
     // Wipe old sample data if present and populate new 143 SK Masala catalog
     try {
@@ -152,12 +153,13 @@ class DatabaseHelper {
     final result = await db.query('settings');
     if (result.isNotEmpty) {
       final s = Settings.fromMap(result.first);
-      if (s.shopName == 'SK TRADERS' || s.phone == '0422-2345678' || !s.address.contains('Tiruchirappalli')) {
+      if (s.shopName == 'SK TRADERS' || s.phone == '0422-2345678' || s.gstNumber == '33ABCDE1234F1Z5' || !s.address.contains('Mariyam Fathima')) {
         final updated = Settings(
           shopName: 'MS TRADERS',
-          address: '138, Mullai Street, Sanjeevi Nagar,\nTiruchirappalli - 620002, Tamil Nadu, India.',
+          address: 'No.144A, Mariyam Fathima Building, E.B.Road, Trichy',
           phone: '7708906866',
-          gstNumber: s.gstNumber.isEmpty ? '33ABCDE1234F1Z5' : s.gstNumber,
+          gstNumber: '33CXGPS6190A1ZI',
+          fssaiNumber: '22421591000206',
           invoicePrefix: s.invoicePrefix.isEmpty ? 'INV' : s.invoicePrefix,
           accountNumber: s.accountNumber,
           ifsc: s.ifsc,
@@ -173,9 +175,10 @@ class DatabaseHelper {
     }
     final defaultSettings = Settings(
       shopName: 'MS TRADERS',
-      address: '138, Mullai Street, Sanjeevi Nagar,\nTiruchirappalli - 620002, Tamil Nadu, India.',
+      address: 'No.144A, Mariyam Fathima Building, E.B.Road, Trichy',
       phone: '7708906866',
-      gstNumber: '33ABCDE1234F1Z5',
+      gstNumber: '33CXGPS6190A1ZI',
+      fssaiNumber: '22421591000206',
       invoicePrefix: 'INV',
       accountNumber: '05390200000618',
       ifsc: 'BARB0TIRUCH',
@@ -239,6 +242,7 @@ class DatabaseHelper {
   // --- PRODUCTS ---
   Future<List<Product>> getProducts() async {
     final db = await instance.database;
+    await db.rawUpdate('UPDATE products SET stock = 0 WHERE stock < 0');
     final result = await db.query('products', orderBy: 'product_name ASC');
     return result.map((json) => Product.fromMap(json)).toList();
   }
@@ -307,6 +311,33 @@ class DatabaseHelper {
   }
 
   // --- SALES & SALE ITEMS ---
+  Future<String> getNextInvoiceNumber() async {
+    final db = await instance.database;
+    final now = DateTime.now();
+    final currentYear = now.year;
+    final currentMonth = now.month;
+
+    int fyStart;
+    int fyEnd;
+    if (currentMonth >= 4) {
+      fyStart = currentYear;
+      fyEnd = (currentYear + 1) % 100;
+    } else {
+      fyStart = currentYear - 1;
+      fyEnd = currentYear % 100;
+    }
+
+    final fyStr = '${fyStart}_${fyEnd.toString().padLeft(2, '0')}';
+
+    final result = await db.rawQuery('SELECT MAX(sale_id) as max_id FROM sales');
+    int nextId = 1;
+    if (result.isNotEmpty && result.first['max_id'] != null) {
+      nextId = ((result.first['max_id'] as num).toInt()) + 1;
+    }
+    final formattedNumber = nextId.toString().padLeft(3, '0');
+    return 'INV_${fyStr}_$formattedNumber';
+  }
+
   Future<int> insertSale(Sale sale, List<SaleItem> items) async {
     final db = await instance.database;
     return await db.transaction((txn) async {
@@ -316,10 +347,17 @@ class DatabaseHelper {
         final itemMap = item.toMap();
         itemMap['sale_id'] = saleId;
         await txn.insert('sale_items', itemMap);
-        // Decrease stock
+        
+        // Fetch unit to calculate correct stock deduction (grams to kg conversion)
+        final prodRows = await txn.query('products', columns: ['unit'], where: 'product_id = ?', whereArgs: [item.productId]);
+        final unitStr = prodRows.isNotEmpty ? (prodRows.first['unit'] as String? ?? '').toLowerCase() : '';
+        final isPcs = unitStr == 'pcs' || unitStr == 'piece' || unitStr == 'pieces' || unitStr == 'pkt' || unitStr == 'nos' || unitStr == 'bottle' || unitStr == 'box';
+        final stockDeduction = isPcs ? item.quantity : (item.quantity / 1000.0);
+
+        // Decrease stock (safely capped at 0 minimum)
         await txn.rawUpdate(
-          'UPDATE products SET stock = stock - ? WHERE product_id = ?',
-          [item.quantity, item.productId],
+          'UPDATE products SET stock = MAX(0, stock - ?) WHERE product_id = ?',
+          [stockDeduction, item.productId],
         );
       }
       return saleId;
@@ -337,9 +375,14 @@ class DatabaseHelper {
       );
       for (var row in itemsResult) {
         final item = SaleItem.fromMap(row);
+        final prodRows = await txn.query('products', columns: ['unit'], where: 'product_id = ?', whereArgs: [item.productId]);
+        final unitStr = prodRows.isNotEmpty ? (prodRows.first['unit'] as String? ?? '').toLowerCase() : '';
+        final isPcs = unitStr == 'pcs' || unitStr == 'piece' || unitStr == 'pieces';
+        final stockRestoration = isPcs ? item.quantity : (item.quantity / 1000.0);
+
         await txn.rawUpdate(
           'UPDATE products SET stock = stock + ? WHERE product_id = ?',
-          [item.quantity, item.productId],
+          [stockRestoration, item.productId],
         );
       }
       // 2. Delete items & sale

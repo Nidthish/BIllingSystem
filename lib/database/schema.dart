@@ -6,8 +6,8 @@ CREATE TABLE categories (
 );
 INSERT INTO "categories" VALUES(1,'Masala Varieties','Spice mixes and masala powders');
 INSERT INTO "categories" VALUES(2,'Masala Ingredients','Raw spices, grains, and ingredients');
-INSERT INTO "categories" VALUES(3,'Aroma Masala Ingredients','Aromatic whole spices and flavouring items');
-INSERT INTO "categories" VALUES(4,'Flour Varieties','Grain flours and ready mix powders');
+INSERT INTO "categories" VALUES(3,'Flour Varieties','Grain flours and ready mix powders');
+INSERT INTO "categories" VALUES(4,'Aroma Masala Ingredients','Aromatic whole spices and flavouring items');
 INSERT INTO "categories" VALUES(5,'Dal Varieties','Lentils, pulses, and gram varieties');
 INSERT INTO "categories" VALUES(6,'Cashew Varieties','Cashew nut splits, pieces, and whole grades');
 INSERT INTO "categories" VALUES(7,'Dry Fruits','Nuts, dried fruits, and edible seeds');

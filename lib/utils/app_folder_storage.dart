@@ -48,9 +48,8 @@ class AppFolderStorage {
   /// Saves an Invoice PDF → <AppDir>/Invoices/
   static Future<File> saveInvoicePdf(Uint8List pdfBytes, String invoiceNo) async {
     final folder = await _getOrCreateFolder('Invoices');
-    final ts    = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
     final clean = invoiceNo.replaceAll(RegExp(r'[^\w\-]'), '_');
-    final file  = File(p.join(folder.path, 'Invoice_${clean}_$ts.pdf'));
+    final file  = File(p.join(folder.path, '$clean.pdf'));
     await file.writeAsBytes(pdfBytes);
     return file;
   }

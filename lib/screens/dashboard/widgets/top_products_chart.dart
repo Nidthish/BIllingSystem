@@ -235,10 +235,11 @@ class _TopProductsChartState extends State<TopProductsChart>
                           bottomTitles: AxisTitles(
                             sideTitles: SideTitles(
                               showTitles: true,
-                              reservedSize: 48,
+                              reservedSize: 52,
+                              interval: 1,
                               getTitlesWidget: (value, meta) {
                                 final idx = value.toInt();
-                                if (idx < 0 || idx >= topEntries.length) {
+                                if (idx < 0 || idx >= topEntries.length || value != idx.toDouble()) {
                                   return const SizedBox.shrink();
                                 }
                                 final pId = topEntries[idx].key;
@@ -247,26 +248,30 @@ class _TopProductsChartState extends State<TopProductsChart>
                                     .firstOrNull;
                                 String name =
                                     product?.productName ?? '#$pId';
-                                if (name.length > 9) {
-                                  name = '${name.substring(0, 7)}..';
+                                if (name.length > 8) {
+                                  name = '${name.substring(0, 6)}..';
                                 }
                                 final isHovered = _hoveredIndex == idx;
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 6),
-                                  child: Text(
-                                    name,
-                                    style: TextStyle(
-                                      fontSize: 9.5,
-                                      fontWeight: isHovered
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                      color: isHovered
-                                          ? accentColor
-                                          : (isDark
-                                              ? Colors.white60
-                                              : Colors.grey.shade600),
+                                return SideTitleWidget(
+                                  meta: meta,
+                                  space: 4,
+                                  child: Transform.rotate(
+                                    angle: -0.4,
+                                    child: Text(
+                                      name,
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: isHovered
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        color: isHovered
+                                            ? accentColor
+                                            : (isDark
+                                                ? Colors.white60
+                                                : Colors.grey.shade600),
+                                      ),
+                                      textAlign: TextAlign.center,
                                     ),
-                                    textAlign: TextAlign.center,
                                   ),
                                 );
                               },

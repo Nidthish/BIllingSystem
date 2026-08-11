@@ -12,12 +12,13 @@ void main() {
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  test('Generate Real Printable Sample Invoice PDF with 40 Products', () async {
+  test('Generate Sample Invoice PDF', () async {
     final settings = Settings(
       shopName: 'MS TRADERS',
-      address: '138, Mullai Street, Sanjeevi Nagar,\nTiruchirappalli - 620002, Tamil Nadu, India.',
+      address: '138, Mullai Street, Sanjeevi Nagar,\nTiruchirappalli- 620002, Tamil Nadu, India',
       phone: '7708906866',
-      gstNumber: '33ABCDE1234F1Z5',
+      gstNumber: '33CXGPS6190A1ZI',
+      fssaiNumber: '22421591000206',
       invoicePrefix: 'INV',
       accountNumber: '05390200000618',
       ifsc: 'BARB0TIRUCH',
@@ -27,42 +28,39 @@ void main() {
     );
 
     final productNames = [
-      'Chicken Masala', 'Mutton Masala', 'Fish Curry Masala', 'Garam Masala', 'Turmeric Powder',
-      'Chilli Powder', 'Coriander Powder', 'Cumin Powder', 'Black Pepper', 'Cardamom',
-      'Clove', 'Cinnamon Stick', 'Fennel Seeds', 'Mustard Seeds', 'Fenugreek Seeds',
-      'Health Mix Powder', 'Rava / Sooji', 'Wheat Flour (Atta)', 'Rice Flour', 'Toor Dal',
-      'Moong Dal', 'Urad Dal', 'Chana Dal', 'Whole Cashew Nut', 'Dry Raisins (Kishmish)',
-      'Almonds (Badam)', 'Pistachios (Pista)', 'Asafoetida (Perungayam)', 'Star Anise', 'Bay Leaves',
-      'Dry Ginger Powder', 'Nutmeg Powder', 'Tamarind Paste', 'Sesame Seeds', 'Groundnut Oil',
-      'Gingelly Oil', 'Sunflower Oil', 'White Pepper', 'Kasoori Methi', 'Saffron (Kesar)'
+      'Ajwain (1kg)',
+      'Almonds (Badam)',
+      'Chicken Masala',
+      'Turmeric Powder',
+      'Chilli Powder',
     ];
 
     final items = <SaleItem>[];
     final products = <Product>[];
     double subtotal = 0;
 
-    for (int i = 0; i < 40; i++) {
+    for (int i = 0; i < 5; i++) {
       final pId = i + 1;
-      final price = (i + 1) * 12.0 + 25.0;
-      final qty = (i % 3) + 1.0;
+      final price = (i + 1) * 120.0;
+      final qty = (i % 2) + 1.0;
       final itemTotal = price * qty;
       subtotal += itemTotal;
 
       products.add(Product(
         productId: pId,
         productName: productNames[i],
-        categoryId: (i % 5) + 1,
+        categoryId: 1,
         purchasePrice: price * 0.7,
         sellingPrice: price,
         stock: 100,
         minimumStock: 10,
         gst: 5.0,
-        unit: i % 4 == 0 ? 'pcs' : 'kg',
-        barcode: 'SK${(i + 1).toString().padLeft(3, '0')}',
+        unit: 'kg',
+        barcode: 'SK00${i + 1}',
       ));
 
       items.add(SaleItem(
-        saleId: 4040,
+        saleId: 1,
         productId: pId,
         quantity: qty,
         price: price,
@@ -74,10 +72,10 @@ void main() {
     final grandTotal = subtotal + gst;
 
     final sale = Sale(
-      saleId: 4040,
-      invoiceNo: 'INV-2026-040',
+      saleId: 1,
+      invoiceNo: 'INV/2026-27/001',
       customerId: 1,
-      customerName: 'SRIRAM (SK TRADERS)',
+      customerName: 'NIDTHISH',
       date: DateTime.now().toIso8601String(),
       subtotal: subtotal,
       discount: 0.0,
@@ -92,17 +90,23 @@ void main() {
       sgstAmount: gst / 2,
     );
 
-    await InvoiceGenerator.generateAndPrintInvoice(
+    final bytes = await InvoiceGenerator.generateAndSaveInvoice(
       sale: sale,
       items: items,
-      customerName: 'SRIRAM (SK TRADERS)',
-      customerPhone: '6382471361',
-      customerAddress: 'TRICHY - 620002, TAMIL NADU',
+      customerName: 'NIDTHISH',
+      customerPhone: '6374518061',
+      customerAddress: 'NO:13, MULLAI STREET, SANJEEVI NAGAR',
       customerGst: '33AAACB1234C1Z1',
       settings: settings,
       allProducts: products,
     );
 
-    print('Sample PDF with 40 products generated successfully!');
+    final file = File('Invoices/INV_2026_27_001.pdf');
+    if (!file.parent.existsSync()) {
+      file.parent.createSync(recursive: true);
+    }
+    await file.writeAsBytes(bytes);
+
+    print('Sample Invoice PDF created at: ${file.absolute.path}');
   });
 }

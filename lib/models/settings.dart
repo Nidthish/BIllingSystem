@@ -3,6 +3,7 @@ class Settings {
   final String address;
   final String phone;
   final String gstNumber;
+  final String fssaiNumber;
   final String invoicePrefix;
   final String accountNumber;
   final String ifsc;
@@ -15,6 +16,7 @@ class Settings {
     required this.address,
     required this.phone,
     required this.gstNumber,
+    this.fssaiNumber = '22421591000206',
     required this.invoicePrefix,
     this.accountNumber = '05390200000618',
     this.ifsc = 'BARB0TIRUCH',
@@ -29,6 +31,9 @@ class Settings {
       address: map['address'] ?? '',
       phone: map['phone'] ?? '',
       gstNumber: map['gst_number'] ?? '',
+      fssaiNumber: (map['fssai_number'] != null && map['fssai_number'].toString().isNotEmpty)
+          ? map['fssai_number']
+          : '22421591000206',
       invoicePrefix: map['invoice_prefix'] ?? '',
       accountNumber: (map['account_number'] != null && map['account_number'].toString().isNotEmpty)
           ? map['account_number']
@@ -54,6 +59,7 @@ class Settings {
       'address': address,
       'phone': phone,
       'gst_number': gstNumber,
+      'fssai_number': fssaiNumber,
       'invoice_prefix': invoicePrefix,
       'account_number': accountNumber,
       'ifsc': ifsc,

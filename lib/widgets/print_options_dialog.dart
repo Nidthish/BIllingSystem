@@ -48,7 +48,7 @@ class PrintOptionsDialog {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Invoice #${sale.invoiceNo} has been saved to your "Invoices" folder.',
+                    'Invoice file "${sale.invoiceNo}.pdf" has been saved to your "Invoices" folder.',
                     style: TextStyle(
                       fontSize: 13,
                       color: isDark ? Colors.white70 : Colors.grey.shade700,

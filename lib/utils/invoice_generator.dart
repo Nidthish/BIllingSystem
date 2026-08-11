@@ -81,7 +81,7 @@ class InvoiceGenerator {
         pageFormat: pageFormat,
         margin: const pw.EdgeInsets.only(left: 18, right: 18, top: 12, bottom: 12),
         build: (pw.Context context) => [
-              // TOP HEADER
+              // TOP HEADER (Exact Layout matching user provided image)
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -92,7 +92,7 @@ class InvoiceGenerator {
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text(
-                          'MS TRADERS',
+                          settings.shopName.isEmpty ? 'MS TRADERS' : settings.shopName.toUpperCase(),
                           style: pw.TextStyle(
                             fontSize: 30,
                             fontWeight: pw.FontWeight.bold,
@@ -105,8 +105,9 @@ class InvoiceGenerator {
                         pw.Container(height: 1.2, width: 200, color: primaryGreen),
                         pw.SizedBox(height: 6),
                         pw.Text(
-                            '138, Mullai Street, Sanjeevi Nagar,\n'
-                            'Tiruchirappalli- 620002, Tamil Nadu, India',
+                          settings.address.isEmpty
+                              ? '138, Mullai Street, Sanjeevi Nagar,\nTiruchirappalli- 620002, Tamil Nadu, India'
+                              : settings.address,
                           style: pw.TextStyle(
                             fontSize: 9,
                             fontWeight: pw.FontWeight.bold,
@@ -115,12 +116,35 @@ class InvoiceGenerator {
                             lineSpacing: 1.1,
                           ),
                         ),
-                        pw.SizedBox(height: 5),
+                        pw.SizedBox(height: 4),
                         pw.Text(
-                          'PHO.NO :7708906866',
+                          'GSTIN : ${settings.gstNumber.isEmpty ? "33CXGPS6190A1ZI" : settings.gstNumber}',
                           style: pw.TextStyle(
                             fontSize: 8,
                             fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.black,
+                            font: fontBold,
+                            fontFallback: fallbacks,
+                          ),
+                        ),
+                        pw.SizedBox(height: 2),
+                        pw.Text(
+                          'FSSAI : ${settings.fssaiNumber.isEmpty ? "22421591000206" : settings.fssaiNumber}',
+                          style: pw.TextStyle(
+                            fontSize: 8,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.black,
+                            font: fontBold,
+                            fontFallback: fallbacks,
+                          ),
+                        ),
+                        pw.SizedBox(height: 3),
+                        pw.Text(
+                          'PHONE NO : ${settings.phone.isEmpty ? "7708906866" : settings.phone}',
+                          style: pw.TextStyle(
+                            fontSize: 8,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.black,
                             font: fontBold,
                             fontFallback: fallbacks,
                           ),
@@ -131,10 +155,10 @@ class InvoiceGenerator {
                   pw.Expanded(
                     flex: 4,
                     child: pw.Container(
-                      alignment: pw.Alignment.topRight, // Pushes the entire block to the right side
+                      alignment: pw.Alignment.topRight,
                       child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.center, // Centers the logo and text relative to each other
-                        mainAxisSize: pw.MainAxisSize.min, // Ensures the column only takes up needed vertical space
+                        crossAxisAlignment: pw.CrossAxisAlignment.center,
+                        mainAxisSize: pw.MainAxisSize.min,
                         children: [
                           if (_skLogoImage != null)
                             pw.Image(_skLogoImage!, width: 205, height: 68, fit: pw.BoxFit.contain)
@@ -147,30 +171,35 @@ class InvoiceGenerator {
                               child: pw.Text(
                                 'SK MASALA',
                                 style: pw.TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: pw.FontWeight.bold,
-                                    color: PdfColors.white,
-                                    fontFallback: fallbacks),
+                                  fontSize: 17,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: PdfColors.white,
+                                  fontFallback: fallbacks,
+                                ),
                               ),
                             ),
                           pw.SizedBox(height: 2),
                           pw.Text(
                             'HOTEL STYLE MASALA',
                             style: pw.TextStyle(
-                                fontSize: 8,
-                                fontWeight: pw.FontWeight.bold,
-                                font: fontBold,
-                                fontFallback: fallbacks),
+                              fontSize: 8,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.black,
+                              font: fontBold,
+                              fontFallback: fallbacks,
+                            ),
                             textAlign: pw.TextAlign.center,
                           ),
                           pw.SizedBox(height: 2),
                           pw.Text(
-                            'TRADITIONAL CHETTINAD STYLE\nMASALAS', // Added \n to break the line like in the image
+                            '( Minimum Usage Maximum Saving )',
                             style: pw.TextStyle(
-                                fontSize: 8,
-                                fontWeight: pw.FontWeight.bold,
-                                font: fontBold,
-                                fontFallback: fallbacks),
+                              fontSize: 8,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.black,
+                              font: fontBold,
+                              fontFallback: fallbacks,
+                            ),
                             textAlign: pw.TextAlign.center,
                           ),
                         ],
@@ -191,36 +220,49 @@ class InvoiceGenerator {
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Container(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                        decoration: pw.BoxDecoration(
-                          color: primaryGreen,
-                          borderRadius: pw.BorderRadius.circular(3),
-                        ),
-                        child: pw.Text(
-                          'TO',
-                          style: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 7.5, fontFallback: fallbacks),
-                        ),
-                      ),
-                      pw.SizedBox(height: 2),
-                      pw.Text(
-                        customerName.isEmpty ? 'WALK-IN CUSTOMER' : customerName.toUpperCase(),
-                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5, font: fontBold, fontFallback: fallbacks),
+                      pw.Row(
+                        children: [
+                          pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            decoration: pw.BoxDecoration(
+                              color: primaryGreen,
+                              borderRadius: pw.BorderRadius.circular(3),
+                            ),
+                            child: pw.Text(
+                              'TO',
+                              style: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 7.5, fontFallback: fallbacks),
+                            ),
+                          ),
+                          pw.SizedBox(width: 6),
+                          pw.Text(
+                            customerName.isEmpty ? 'WALK-IN CUSTOMER' : customerName.toUpperCase(),
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5, font: fontBold, fontFallback: fallbacks),
+                          ),
+                        ],
                       ),
                       if (customerAddress.isNotEmpty)
-                        pw.Text(
-                          customerAddress.toUpperCase(),
-                          style: pw.TextStyle(fontSize: 7.5, font: fontReg, fontFallback: fallbacks),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.only(top: 2),
+                          child: pw.Text(
+                            customerAddress.toUpperCase(),
+                            style: pw.TextStyle(fontSize: 7.5, font: fontReg, fontFallback: fallbacks),
+                          ),
                         ),
                       if (customerPhone.isNotEmpty)
-                        pw.Text(
-                          'PH: $customerPhone',
-                          style: pw.TextStyle(fontSize: 7.5, font: fontReg, fontFallback: fallbacks),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.only(top: 1),
+                          child: pw.Text(
+                            'PH: $customerPhone',
+                            style: pw.TextStyle(fontSize: 7.5, font: fontReg, fontFallback: fallbacks),
+                          ),
                         ),
                       if (customerGst != null && customerGst.isNotEmpty)
-                        pw.Text(
-                          'GSTIN: $customerGst',
-                          style: pw.TextStyle(fontSize: 7.5, font: fontBold, fontFallback: fallbacks),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.only(top: 1),
+                          child: pw.Text(
+                            'GSTIN: $customerGst',
+                            style: pw.TextStyle(fontSize: 7.5, font: fontBold, fontFallback: fallbacks),
+                          ),
                         ),
                     ],
                   ),
@@ -244,7 +286,7 @@ class InvoiceGenerator {
                   ),
                 ],
               ),
-              pw.SizedBox(height: 3),
+              pw.SizedBox(height: 6),
 
               // PRODUCT TABLE (DYNAMIC ROWS - ONLY ACTUAL ITEMS)
               pw.Table(
@@ -288,9 +330,11 @@ class InvoiceGenerator {
                   }),
                 ],
               ),
-              pw.SizedBox(height: items.length > 18 ? 4 : 8),
+              
+              // MIDDLE SPACING
+              pw.Spacer(),
 
-              // BOTTOM SECTION
+              // BOTTOM SECTION (BANK DETAILS, QR CODES WITH LOCATION/WEBSITE TEXT, TOTALS, PRODUCTS WE OFFER, SIGNATURE)
               pw.Row(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
@@ -298,7 +342,7 @@ class InvoiceGenerator {
                   pw.Expanded(
                     flex: 34,
                     child: pw.Container(
-                      height: 68,
+                      height: 72,
                       decoration: pw.BoxDecoration(
                         border: pw.Border.all(color: primaryGreen, width: 1),
                         borderRadius: pw.BorderRadius.circular(4),
@@ -341,33 +385,53 @@ class InvoiceGenerator {
                   ),
                   pw.SizedBox(width: 6),
 
-                  // DUAL QR CODES
+                  // DUAL QR CODES (Location QR on left, Website QR on right)
                   pw.Expanded(
                     flex: 32,
                     child: pw.Container(
-                      height: 68,
+                      height: 72,
                       child: pw.Row(
                         mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
                         crossAxisAlignment: pw.CrossAxisAlignment.center,
                         children: [
-                          if (_qrPaymentImage != null)
-                            pw.Image(_qrPaymentImage!, width: 60, height: 60)
-                          else
-                            pw.BarcodeWidget(
-                              data: 'upi://pay?pa=${settings.phone}@upi&pn=${settings.shopName}',
-                              barcode: pw.Barcode.qrCode(),
-                              width: 60,
-                              height: 60,
-                            ),
-                          if (_qrLocationImage != null)
-                            pw.Image(_qrLocationImage!, width: 60, height: 60)
-                          else
-                            pw.BarcodeWidget(
-                              data: 'https://maps.google.com/?q=${settings.address}',
-                              barcode: pw.Barcode.qrCode(),
-                              width: 60,
-                              height: 60,
-                            ),
+                          pw.Column(
+                            mainAxisAlignment: pw.MainAxisAlignment.center,
+                            children: [
+                              if (_qrLocationImage != null)
+                                pw.Image(_qrLocationImage!, width: 50, height: 50)
+                              else
+                                pw.BarcodeWidget(
+                                  data: 'https://maps.google.com/?q=${settings.address}',
+                                  barcode: pw.Barcode.qrCode(),
+                                  width: 50,
+                                  height: 50,
+                                ),
+                              pw.SizedBox(height: 2),
+                              pw.Text(
+                                'Website',
+                                style: pw.TextStyle(fontSize: 6.5, fontWeight: pw.FontWeight.bold, font: fontBold, color: primaryGreen),
+                              ),
+                            ],
+                          ),
+                          pw.Column(
+                            mainAxisAlignment: pw.MainAxisAlignment.center,
+                            children: [
+                              if (_qrPaymentImage != null)
+                                pw.Image(_qrPaymentImage!, width: 50, height: 50)
+                              else
+                                pw.BarcodeWidget(
+                                  data: 'upi://pay?pa=${settings.phone}@upi&pn=${settings.shopName}',
+                                  barcode: pw.Barcode.qrCode(),
+                                  width: 50,
+                                  height: 50,
+                                ),
+                              pw.SizedBox(height: 2),
+                              pw.Text(
+                                'Location',
+                                style: pw.TextStyle(fontSize: 6.5, fontWeight: pw.FontWeight.bold, font: fontBold, color: primaryGreen),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -426,7 +490,7 @@ class InvoiceGenerator {
                   ),
                 ],
               ),
-              pw.SizedBox(height: 10),
+              pw.SizedBox(height: 8),
 
               // PRODUCTS WE OFFER BOX & SIGNATURE AREA
               pw.Row(
@@ -508,7 +572,6 @@ class InvoiceGenerator {
                           ),
                   ),
                   pw.SizedBox(width: 12),
-
                   pw.Expanded(
                     flex: 38,
                     child: pw.Container(
@@ -547,10 +610,9 @@ class InvoiceGenerator {
                   ),
                 ],
               ),
+              pw.SizedBox(height: 8),
 
-              pw.SizedBox(height: 10),
-
-              // FOOTER
+              // THANK YOU BANNER
               pw.Center(
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.center,
@@ -643,7 +705,7 @@ class InvoiceGenerator {
         return await Printing.directPrintPdf(
           printer: physicalPrinter,
           onLayout: (PdfPageFormat format) async => pdfBytes,
-          name: 'Invoice_$invoiceNo',
+          name: invoiceNo,
         );
       }
     } catch (e) {
@@ -660,7 +722,7 @@ class InvoiceGenerator {
     try {
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) => pdfBytes,
-        name: 'Invoice_$invoiceNo',
+        name: invoiceNo,
       );
     } catch (e) {
       print('Printing layout error: $e');
@@ -776,5 +838,45 @@ class InvoiceGenerator {
       return DateFormat("dd.MM.yyyy").format(d);
     } catch (_) {}
     return dateStr;
+  }
+
+  /// Generates Financial Year invoice pattern: INV/2026-27/001
+  static String generateInvoiceNumber({
+    required String prefix,
+    required DateTime date,
+    required List<Sale> existingSales,
+  }) {
+    final cleanPrefix = prefix.trim().isEmpty ? 'INV' : prefix.trim();
+    final year = date.year;
+    final month = date.month;
+
+    int startYear;
+    int endYearShort;
+
+    if (month >= 4) {
+      startYear = year;
+      endYearShort = (year + 1) % 100;
+    } else {
+      startYear = year - 1;
+      endYearShort = year % 100;
+    }
+
+    final fyStr = '$startYear-${endYearShort.toString().padLeft(2, '0')}';
+    final prefixWithFy = '$cleanPrefix/$fyStr/';
+
+    int maxSeq = 0;
+    for (final s in existingSales) {
+      if (s.invoiceNo.startsWith(prefixWithFy)) {
+        final parts = s.invoiceNo.split('/');
+        if (parts.length >= 3) {
+          final seqNum = int.tryParse(parts.last) ?? 0;
+          if (seqNum > maxSeq) maxSeq = seqNum;
+        }
+      }
+    }
+
+    final nextSeq = maxSeq + 1;
+    final seqStr = nextSeq.toString().padLeft(3, '0');
+    return '$prefixWithFy$seqStr';
   }
 }

@@ -43,4 +43,16 @@ class Customer {
     }
     return map;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Customer &&
+          runtimeType == other.runtimeType &&
+          (customerId != null && other.customerId != null
+              ? customerId == other.customerId
+              : customerName == other.customerName && phone == other.phone);
+
+  @override
+  int get hashCode => customerId != null ? customerId.hashCode : (customerName.hashCode ^ phone.hashCode);
 }

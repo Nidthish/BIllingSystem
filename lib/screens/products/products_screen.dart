@@ -303,10 +303,11 @@ class ProductsScreen extends StatelessWidget {
                 ),
                 onPressed: () {
                   final settings = context.read<SettingsProvider>().settings ?? Settings(
-                    shopName: 'SK TRADERS',
-                    address: '15 Market Street, Coimbatore, TN 641001',
-                    phone: '0422-2345678',
-                    gstNumber: '33ABCDE1234F1Z5',
+                    shopName: 'MS TRADERS',
+                    address: 'No.144A, Mariyam Fathima Building, E.B.Road, Trichy',
+                    phone: '7708906866',
+                    gstNumber: '33CXGPS6190A1ZI',
+                    fssaiNumber: '22421591000206',
                     invoicePrefix: 'INV',
                   );
                   if (prodProv.products.isEmpty) {
@@ -346,10 +347,11 @@ class ProductsScreen extends StatelessWidget {
                 ),
                 onPressed: () async {
                   final settings = context.read<SettingsProvider>().settings ?? Settings(
-                    shopName: 'SK TRADERS',
-                    address: '15 Market Street, Coimbatore, TN 641001',
-                    phone: '0422-2345678',
-                    gstNumber: '33ABCDE1234F1Z5',
+                    shopName: 'MS TRADERS',
+                    address: 'No.144A, Mariyam Fathima Building, E.B.Road, Trichy',
+                    phone: '7708906866',
+                    gstNumber: '33CXGPS6190A1ZI',
+                    fssaiNumber: '22421591000206',
                     invoicePrefix: 'INV',
                   );
                   if (prodProv.products.isEmpty) {
