@@ -11,8 +11,8 @@ class Category {
 
   factory Category.fromMap(Map<String, dynamic> map) {
     return Category(
-      categoryId: map['category_id'],
-      categoryName: map['category_name'],
+      categoryId: (map['category_id'] as num?)?.toInt(),
+      categoryName: map['category_name'] ?? '',
       description: map['description'],
     );
   }

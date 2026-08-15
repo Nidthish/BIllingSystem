@@ -91,7 +91,7 @@ class DatabaseHelper {
     try {
       final unmigrated = await db.rawQuery("SELECT sale_id, subtotal, discount, gst FROM sales WHERE taxable_amount = 0 OR taxable_amount IS NULL");
       for (final row in unmigrated) {
-        final id = row['sale_id'] as int;
+        final id = (row['sale_id'] as num).toInt();
         final subtotal = (row['subtotal'] as num?)?.toDouble() ?? 0.0;
         final discount = (row['discount'] as num?)?.toDouble() ?? 0.0;
         final gst = (row['gst'] as num?)?.toDouble() ?? 0.0;

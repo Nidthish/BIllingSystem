@@ -58,9 +58,9 @@ class Sale {
     final sgstA = (map['sgst_amount'] as num?)?.toDouble() ?? (gst / 2);
 
     return Sale(
-      saleId: map['sale_id'],
+      saleId: (map['sale_id'] as num?)?.toInt(),
       invoiceNo: map['invoice_no'] ?? '',
-      customerId: map['customer_id'],
+      customerId: (map['customer_id'] as num?)?.toInt(),
       customerName: map['customer_name'],
       date: map['date'] ?? '',
       subtotal: subtotal,

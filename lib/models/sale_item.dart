@@ -17,9 +17,9 @@ class SaleItem {
 
   factory SaleItem.fromMap(Map<String, dynamic> map) {
     return SaleItem(
-      saleItemId: map['sale_item_id'],
-      saleId: map['sale_id'],
-      productId: map['product_id'],
+      saleItemId: (map['sale_item_id'] as num?)?.toInt(),
+      saleId: (map['sale_id'] as num?)?.toInt() ?? 0,
+      productId: (map['product_id'] as num?)?.toInt() ?? 0,
       quantity: (map['quantity'] as num?)?.toDouble() ?? 0.0,
       price: (map['price'] as num?)?.toDouble() ?? 0.0,
       total: (map['total'] as num?)?.toDouble() ?? 0.0,

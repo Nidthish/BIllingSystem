@@ -62,10 +62,41 @@ class _BillingScreenState extends State<BillingScreen> {
   }
 
   // --- CART MANAGEMENT ---
-  void _addToCart() {
+  void _addToCart([List<Product>? currentProducts]) async {
+    if (_selectedProduct == null) {
+      final query = _productSearchController.text.trim().toLowerCase();
+      if (query.isNotEmpty) {
+        final allProducts = currentProducts ?? await _dbHelper.getProducts();
+        final matches = allProducts.where((p) {
+          final nameLower = p.productName.toLowerCase();
+          final codeLower = p.codeOrId.toLowerCase();
+          final barcodeLower = (p.barcode ?? '').toLowerCase();
+          final idStr = p.productId != null ? p.productId.toString() : '';
+          return codeLower == query ||
+              barcodeLower == query ||
+              idStr == query ||
+              '#$idStr' == query ||
+              nameLower == query ||
+              nameLower.contains(query) ||
+              codeLower.contains(query) ||
+              barcodeLower.contains(query);
+        }).toList();
+
+        if (matches.isNotEmpty) {
+          _selectedProduct = matches.firstWhere(
+            (p) =>
+                p.codeOrId.toLowerCase() == query ||
+                (p.barcode ?? '').toLowerCase() == query ||
+                p.productId.toString() == query,
+            orElse: () => matches.first,
+          );
+        }
+      }
+    }
+
     if (_selectedProduct == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a product first')),
+        const SnackBar(content: Text('Please select or search a valid product first')),
       );
       return;
     }
@@ -478,14 +509,12 @@ class _BillingScreenState extends State<BillingScreen> {
                                           return products;
                                         }
                                         return products.where((Product option) {
-                                          final nameMatch = option.productName
-                                              .toLowerCase()
-                                              .contains(query);
-                                          final codeMatch = option.barcode != null &&
-                                              option.barcode!.toLowerCase().contains(query);
-                                          final idMatch = option.productId != null &&
-                                              option.productId.toString() == query;
-                                          return nameMatch || codeMatch || idMatch;
+                                          final nameMatch = option.productName.toLowerCase().contains(query);
+                                          final codeOrIdMatch = option.codeOrId.toLowerCase().contains(query);
+                                          final barcodeMatch = (option.barcode ?? '').toLowerCase().contains(query);
+                                          final idStr = option.productId != null ? option.productId.toString() : '';
+                                          final idMatch = idStr == query || '#$idStr' == query;
+                                          return nameMatch || codeOrIdMatch || barcodeMatch || idMatch;
                                         });
                                       },
                                       displayStringForOption: (Product option) {
@@ -504,6 +533,28 @@ class _BillingScreenState extends State<BillingScreen> {
                                             suffixIcon: Icon(Icons.arrow_drop_down, size: 18),
                                           ),
                                           style: const TextStyle(fontSize: 13),
+                                          onChanged: (val) {
+                                            final query = val.trim().toLowerCase();
+                                            if (query.isEmpty) {
+                                              if (_selectedProduct != null) {
+                                                setState(() => _selectedProduct = null);
+                                              }
+                                              return;
+                                            }
+                                            final matches = products.where((p) =>
+                                                p.codeOrId.toLowerCase() == query ||
+                                                (p.barcode ?? '').toLowerCase() == query ||
+                                                p.productName.toLowerCase() == query).toList();
+                                            if (matches.isNotEmpty) {
+                                              setState(() => _selectedProduct = matches.first);
+                                            } else if (_selectedProduct != null) {
+                                              final selCode = _selectedProduct!.codeOrId.toLowerCase();
+                                              final selName = _selectedProduct!.productName.toLowerCase();
+                                              if (!query.contains(selCode) && !query.contains(selName)) {
+                                                setState(() => _selectedProduct = null);
+                                              }
+                                            }
+                                          },
                                           onSubmitted: (value) {
                                             final query = value.trim().toLowerCase();
                                             if (query.isNotEmpty) {
@@ -518,7 +569,8 @@ class _BillingScreenState extends State<BillingScreen> {
                                                     '#$idStr' == query ||
                                                     nameLower == query ||
                                                     nameLower.contains(query) ||
-                                                    codeLower.contains(query);
+                                                    codeLower.contains(query) ||
+                                                    barcodeLower.contains(query);
                                               }).toList();
 
                                               if (matches.isNotEmpty) {
@@ -536,6 +588,7 @@ class _BillingScreenState extends State<BillingScreen> {
                                                       : exactMatch.productName;
                                                 });
                                                 onFieldSubmitted();
+                                                _addToCart(products);
                                               }
                                             }
                                           },
@@ -549,7 +602,7 @@ class _BillingScreenState extends State<BillingScreen> {
                                             color: isDark ? const Color(0xFF1C382B) : Colors.white,
                                             borderRadius: BorderRadius.circular(8),
                                             child: Container(
-                                              width: 450,
+                                              width: 480,
                                               constraints: const BoxConstraints(maxHeight: 280),
                                               child: ListView.builder(
                                                 padding: EdgeInsets.zero,
@@ -607,7 +660,7 @@ class _BillingScreenState extends State<BillingScreen> {
                                       foregroundColor: Colors.white,
                                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                     ),
-                                    onPressed: _addToCart,
+                                    onPressed: () => _addToCart(products),
                                   ),
                                 ],
                               ),

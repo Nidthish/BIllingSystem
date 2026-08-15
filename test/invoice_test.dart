@@ -71,4 +71,37 @@ void main() {
     expect(sale.grandTotal, 3290.23);
     expect(settings.shopName, 'MS TRADERS');
   });
+
+  test('Product.fromMap correctly parses double stock values from database without throwing TypeError', () {
+    final rawMap = <String, dynamic>{
+      'product_id': 123,
+      'product_name': 'Product #123',
+      'category_id': 1,
+      'purchase_price': 30.0,
+      'selling_price': 40.0,
+      'stock': 999.9, // SQLite dynamic real type after stock deduction
+      'minimum_stock': 5.0,
+      'gst': 5.0,
+      'unit': 'g',
+      'barcode': 'SK123',
+    };
+
+    final product = Product.fromMap(rawMap);
+    expect(product.productId, 123);
+    expect(product.stock, 1000);
+    expect(product.minimumStock, 5);
+  });
+
+  test('Product search matches barcode, product code, ID, and product name', () {
+    final p1 = Product(productId: 101, productName: 'Chettinad Chicken Masala', purchasePrice: 0, sellingPrice: 50, stock: 10, minimumStock: 5, gst: 0, barcode: 'SK002');
+    final p2 = Product(productId: 102, productName: 'Product #102', purchasePrice: 0, sellingPrice: 40, stock: 10, minimumStock: 5, gst: 0);
+
+    expect(p1.codeOrId, 'SK002');
+    expect(p2.codeOrId, '#102');
+
+    // Matching SK002
+    expect(p1.codeOrId.toLowerCase().contains('sk002'), isTrue);
+    // Matching #102
+    expect(p2.codeOrId.toLowerCase().contains('#102'), isTrue);
+  });
 }

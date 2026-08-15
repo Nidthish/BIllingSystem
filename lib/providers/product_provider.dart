@@ -18,8 +18,10 @@ class ProductProvider with ChangeNotifier {
     return _products.where((p) {
       final matchesSearch = query.isEmpty ||
           p.productName.toLowerCase().contains(query) ||
+          p.codeOrId.toLowerCase().contains(query) ||
           (p.barcode != null && p.barcode!.toLowerCase().contains(query)) ||
-          (p.productId != null && p.productId.toString() == query);
+          (p.productId != null && p.productId.toString() == query) ||
+          ('#${p.productId}').toLowerCase() == query;
       final matchesCategory = _selectedCategoryId == null || p.categoryId == _selectedCategoryId;
       return matchesSearch && matchesCategory;
     }).toList();

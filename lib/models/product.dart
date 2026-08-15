@@ -34,13 +34,13 @@ class Product {
 
   factory Product.fromMap(Map<String, dynamic> map) {
     return Product(
-      productId: map['product_id'],
+      productId: (map['product_id'] as num?)?.toInt(),
       productName: map['product_name'] ?? '',
-      categoryId: map['category_id'],
+      categoryId: (map['category_id'] as num?)?.toInt(),
       purchasePrice: (map['purchase_price'] as num?)?.toDouble() ?? 0.0,
       sellingPrice: (map['selling_price'] as num?)?.toDouble() ?? 0.0,
-      stock: map['stock'] ?? 0,
-      minimumStock: map['minimum_stock'] ?? 0,
+      stock: (map['stock'] as num?)?.round() ?? 0,
+      minimumStock: (map['minimum_stock'] as num?)?.round() ?? 0,
       gst: (map['gst'] as num?)?.toDouble() ?? 0.0,
       unit: map['unit'],
       barcode: map['barcode'],

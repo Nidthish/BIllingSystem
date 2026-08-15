@@ -19,7 +19,7 @@ class Customer {
 
   factory Customer.fromMap(Map<String, dynamic> map) {
     return Customer(
-      customerId: map['customer_id'],
+      customerId: (map['customer_id'] as num?)?.toInt(),
       customerName: map['customer_name'] ?? '',
       phone: map['phone'],
       address: map['address'],

@@ -12,12 +12,15 @@ class CustomerProvider with ChangeNotifier {
   String get searchQuery => _searchQuery;
 
   List<Customer> get filteredCustomers {
-    if (_searchQuery.isEmpty) return _customers;
-    final q = _searchQuery.toLowerCase();
+    if (_searchQuery.trim().isEmpty) return _customers;
+    final q = _searchQuery.trim().toLowerCase();
     return _customers.where((c) =>
       c.customerName.toLowerCase().contains(q) ||
       (c.phone != null && c.phone!.contains(q)) ||
-      (c.city != null && c.city!.toLowerCase().contains(q))
+      (c.city != null && c.city!.toLowerCase().contains(q)) ||
+      (c.gstNumber != null && c.gstNumber!.toLowerCase().contains(q)) ||
+      (c.address != null && c.address!.toLowerCase().contains(q)) ||
+      (c.customerId != null && c.customerId.toString() == q)
     ).toList();
   }
 
