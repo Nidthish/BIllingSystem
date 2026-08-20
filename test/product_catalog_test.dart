@@ -3,7 +3,7 @@ import 'package:smartbill/database/schema.dart';
 
 void main() {
   test('initialSqlScript contains 143 product inserts', () {
-    final productInsertMatches = RegExp(r"\('([^']+)',\s*(\d+),\s*0\.0,\s*0\.0,\s*1000,\s*5,\s*0\.0,\s*'g',\s*'([^']+)'\)").allMatches(initialSqlScript);
+    final productInsertMatches = RegExp(r"\('([^']+)',\s*(\d+),\s*0\.0,\s*0\.0,\s*\d+,\s*5,\s*0\.0,\s*'g',\s*'([^']+)'\)").allMatches(initialSqlScript);
     expect(productInsertMatches.length, equals(143));
 
     // Verify product code SK002

@@ -170,7 +170,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard & Sales Analytics'),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/images/sk_logo.png',
+              height: 32,
+              width: 32,
+              fit: BoxFit.contain,
+              errorBuilder: (ctx, err, stack) => const Icon(Icons.dashboard, color: Color(0xFF00875A), size: 28),
+            ),
+            const SizedBox(width: 10),
+            const Text('Dashboard & Sales Analytics'),
+          ],
+        ),
       ),
       body: Consumer3<DashboardProvider, SalesProvider, ProductProvider>(
         builder: (context, dashboard, sales, products, child) {

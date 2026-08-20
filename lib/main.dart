@@ -65,6 +65,15 @@ class SmartBillApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
+            builder: (context, child) {
+              final mediaQueryData = MediaQuery.of(context);
+              return MediaQuery(
+                data: mediaQueryData.copyWith(
+                  textScaler: const TextScaler.linear(0.85),
+                ),
+                child: child!,
+              );
+            },
             home: const MainScreen(),
           );
         },

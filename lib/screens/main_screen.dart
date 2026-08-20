@@ -17,6 +17,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  bool _isSidebarVisible = true;
 
   final List<Widget> _screens = [
     const DashboardScreen(),
@@ -27,114 +28,200 @@ class _MainScreenState extends State<MainScreen> {
     const ReportsScreen(),
   ];
 
+  void _toggleSidebar() {
+    setState(() {
+      _isSidebarVisible = !_isSidebarVisible;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      body: Row(
+      body: Stack(
         children: [
-          // Sidebar
-          Material(
-            color: Theme.of(context).cardColor,
-            child: SizedBox(
-              width: 250,
-              child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF064E3B), Color(0xFF00875A)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'SK TRADERS',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'SmartBill',
-                        style: TextStyle(
-                          color: Color(0xE6FFFFFF),
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.3,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    children: [
-                      _buildNavItem(0, Icons.dashboard_outlined, 'Dashboard'),
-                      _buildNavItem(1, Icons.receipt_long_outlined, 'Billing'),
-                      _buildNavItem(2, Icons.inventory_2_outlined, 'Products'),
-                      _buildNavItem(3, Icons.category_outlined, 'Categories'),
-                      _buildNavItem(4, Icons.people_outline, 'Customers'),
-                      _buildNavItem(5, Icons.bar_chart_outlined, 'Reports'),
-                    ],
-                  ),
-                ),
-                // Theme Toggle Switch (Night Mode / Light Mode)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    border: Border(top: BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Icon(
-                              themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                              color: themeProvider.isDarkMode ? const Color(0xFF34D399) : const Color(0xFF00875A),
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                themeProvider.isDarkMode ? 'Night Mode' : 'Light Mode',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                overflow: TextOverflow.ellipsis,
+          Row(
+            children: [
+              // Collapsible Sidebar
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                width: _isSidebarVisible ? 195 : 0,
+                child: ClipRect(
+                  child: OverflowBox(
+                    minWidth: 195,
+                    maxWidth: 195,
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      color: Theme.of(context).cardColor,
+                      child: Column(
+                        children: [
+                          // Sidebar Header with Logo and Toggle Button
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                            width: double.infinity,
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFF064E3B), Color(0xFF00875A)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
                             ),
-                          ],
-                        ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Image.asset(
+                                    'assets/images/sk_logo.png',
+                                    height: 36,
+                                    width: 36,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (ctx, err, stack) => const Icon(Icons.store, color: Color(0xFF00875A), size: 28),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: const [
+                                      Text(
+                                        'MS TRADERS',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 0.5,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      SizedBox(height: 2),
+                                      Text(
+                                        'SmartBill',
+                                        style: TextStyle(
+                                          color: Color(0xE6FFFFFF),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500,
+                                          letterSpacing: 0.3,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.menu_open, color: Colors.white, size: 22),
+                                  tooltip: 'Hide Navigation Menu',
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: _toggleSidebar,
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Nav Items
+                          Expanded(
+                            child: ListView(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              children: [
+                                _buildNavItem(0, Icons.dashboard_outlined, 'Dashboard'),
+                                _buildNavItem(1, Icons.receipt_long_outlined, 'Billing'),
+                                _buildNavItem(2, Icons.inventory_2_outlined, 'Products'),
+                                _buildNavItem(3, Icons.category_outlined, 'Categories'),
+                                _buildNavItem(4, Icons.people_outline, 'Customers'),
+                                _buildNavItem(5, Icons.bar_chart_outlined, 'Reports'),
+                              ],
+                            ),
+                          ),
+                          // Theme Toggle Switch
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              border: Border(top: BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                                        color: themeProvider.isDarkMode ? const Color(0xFF34D399) : const Color(0xFF00875A),
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Flexible(
+                                        child: Text(
+                                          themeProvider.isDarkMode ? 'Night' : 'Light',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Switch(
+                                  value: themeProvider.isDarkMode,
+                                  activeTrackColor: const Color(0xFF34D399),
+                                  onChanged: (val) => themeProvider.toggleTheme(),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      Switch(
-                        value: themeProvider.isDarkMode,
-                        activeTrackColor: const Color(0xFF34D399),
-                        onChanged: (val) => themeProvider.toggleTheme(),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ],
+              ),
+              // Main Screen Content
+              Expanded(
+                child: _screens[_selectedIndex],
+              ),
+            ],
+          ),
+          // Floating Toggle Menu Button when Sidebar is Hidden
+          if (!_isSidebarVisible)
+            Positioned(
+              top: 10,
+              left: 10,
+              child: Material(
+                elevation: 6,
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: const BorderSide(color: Color(0xFF00875A), width: 1.5),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: _toggleSidebar,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.menu, color: Color(0xFF00875A), size: 20),
+                        SizedBox(width: 6),
+                        Text(
+                          'Menu',
+                          style: TextStyle(
+                            color: Color(0xFF00875A),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
-          ),
-          // Main Content
-          Expanded(
-            child: _screens[_selectedIndex],
-          ),
         ],
       ),
     );

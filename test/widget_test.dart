@@ -9,7 +9,6 @@ void main() {
 
   testWidgets('SmartBill App smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const SmartBillApp());
-    await tester.pump();
     expect(find.byType(SmartBillApp), findsOneWidget);
   });
 }

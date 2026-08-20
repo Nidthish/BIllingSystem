@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/customer.dart';
 import '../../models/product.dart';
 import '../../models/sale.dart';
 import '../../models/sale_item.dart';
 import '../../models/settings.dart';
+import '../../providers/product_provider.dart';
+import '../../providers/sales_provider.dart';
+import '../../providers/customer_provider.dart';
+import '../../providers/invoice_reports_provider.dart';
+import '../../providers/sales_analysis_provider.dart';
 import '../../utils/invoice_generator.dart';
 import '../../widgets/print_options_dialog.dart';
 
@@ -31,10 +37,12 @@ class _BillingScreenState extends State<BillingScreen> {
   final TextEditingController _walkInGstController = TextEditingController();
   bool _saveCustomerForFuture = false;
 
-  // Product Search State
+  // Product Search & Pre-Cart State
   Product? _selectedProduct;
   final TextEditingController _productSearchController = TextEditingController();
   final FocusNode _productSearchFocusNode = FocusNode();
+  final TextEditingController _addQtyController = TextEditingController();
+  final TextEditingController _addPriceController = TextEditingController();
 
   // Cart & Calculation State
   final List<SaleItem> _cart = [];
@@ -57,8 +65,36 @@ class _BillingScreenState extends State<BillingScreen> {
     _walkInGstController.dispose();
     _productSearchController.dispose();
     _productSearchFocusNode.dispose();
+    _addQtyController.dispose();
+    _addPriceController.dispose();
     _gstRateController.dispose();
     super.dispose();
+  }
+
+  // --- PRE-CART QTY & PRICE AUTO-CALCULATION ---
+  void _updateAddQtyAndPrice(Product? prod) {
+    if (prod == null) {
+      _addQtyController.clear();
+      _addPriceController.clear();
+      return;
+    }
+    final defaultQty = prod.unit == 'g' ? 1000.0 : 1.0;
+    _addQtyController.text = defaultQty % 1 == 0 ? defaultQty.toInt().toString() : defaultQty.toStringAsFixed(1);
+
+    final calcPrice = prod.unit == 'g'
+        ? (defaultQty / 1000.0) * prod.sellingPrice
+        : defaultQty * prod.sellingPrice;
+    _addPriceController.text = calcPrice.toStringAsFixed(calcPrice % 1 == 0 ? 0 : 2);
+  }
+
+  void _onAddQtyChanged() {
+    if (_selectedProduct == null) return;
+    final qty = double.tryParse(_addQtyController.text.trim()) ?? 0.0;
+    final prod = _selectedProduct!;
+    final calcPrice = prod.unit == 'g'
+        ? (qty / 1000.0) * prod.sellingPrice
+        : qty * prod.sellingPrice;
+    _addPriceController.text = calcPrice.toStringAsFixed(calcPrice % 1 == 0 ? 0 : 2);
   }
 
   // --- CART MANAGEMENT ---
@@ -102,12 +138,81 @@ class _BillingScreenState extends State<BillingScreen> {
     }
 
     final prod = _selectedProduct!;
-    final initialPrice = prod.sellingPrice;
-    final unitStr = (prod.unit ?? '').toLowerCase();
-    final isPcs = unitStr == 'pcs' || unitStr == 'piece' || unitStr == 'pieces' || unitStr == 'pkt' || unitStr == 'nos' || unitStr == 'bottle' || unitStr == 'box';
-    final initialQty = isPcs ? 1.0 : 1000.0;
+
+    // 1. OUT OF STOCK PREVENTION (stock <= 0)
+    if (prod.stock <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.block, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'No stock available! "${prod.productName}" has 0 stock remaining. Cannot add to bill.',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red.shade700,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      _productSearchController.clear();
+      _addQtyController.clear();
+      _addPriceController.clear();
+      setState(() {
+        _selectedProduct = null;
+      });
+      return;
+    }
+
+    final qtyInput = double.tryParse(_addQtyController.text.trim());
+    final priceInput = double.tryParse(_addPriceController.text.trim());
+
+    final initialQty = qtyInput ?? (prod.unit == 'g' ? 1000.0 : 1.0);
+    final initialPrice = priceInput ?? (prod.unit == 'g' ? (initialQty / 1000.0) * prod.sellingPrice : initialQty * prod.sellingPrice);
 
     final existingIndex = _cart.indexWhere((item) => item.productId == prod.productId);
+    final existingQty = existingIndex >= 0 ? _cart[existingIndex].quantity : 0.0;
+    final targetQty = existingQty + initialQty;
+
+    // 2. CHECK TARGET QTY VS AVAILABLE STOCK
+    if (targetQty > prod.stock) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Cannot add to bill: Requested quantity (${targetQty.toInt()}) exceeds available stock (${prod.stock} ${prod.unit ?? "pcs"}).',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+      return;
+    }
+
+    // 3. MINIMUM STOCK HIT ALERT
+    if (prod.stock <= prod.minimumStock) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Low Stock Alert: "${prod.productName}" has hit minimum stock level! Remaining stock: ${prod.stock}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.orange.shade800,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
 
     if (existingIndex >= 0) {
       final existingItem = _cart[existingIndex];
@@ -134,6 +239,8 @@ class _BillingScreenState extends State<BillingScreen> {
     }
 
     _productSearchController.clear();
+    _addQtyController.clear();
+    _addPriceController.clear();
     setState(() {
       _selectedProduct = null;
     });
@@ -154,17 +261,13 @@ class _BillingScreenState extends State<BillingScreen> {
     return sum;
   }
 
-  double get _taxableAmount {
-    if (_selectedGstRate <= 0) return _subtotal;
-    return _subtotal / (1 + (_selectedGstRate / 100));
-  }
-
-  double get _gst => _subtotal - _taxableAmount;
+  double get _taxableAmount => _subtotal;
+  double get _gst => _selectedGstRate > 0 ? (_taxableAmount * (_selectedGstRate / 100.0)) : 0.0;
   double get _cgstAmount => _gst / 2;
   double get _sgstAmount => _gst / 2;
   double get _cgstRate => _selectedGstRate / 2;
   double get _sgstRate => _selectedGstRate / 2;
-  double get _grandTotal => _subtotal;
+  double get _grandTotal => _subtotal + _gst;
 
   // --- INVOICE PROCESSING ---
   Future<void> _processInvoice() async {
@@ -173,6 +276,35 @@ class _BillingScreenState extends State<BillingScreen> {
         const SnackBar(content: Text('Cart is empty! Add products to bill.')),
       );
       return;
+    }
+
+    // STRICT STOCK VALIDATION BEFORE BILLING
+    final latestProducts = await _dbHelper.getProducts();
+    for (var item in _cart) {
+      final prodList = latestProducts.where((p) => p.productId == item.productId);
+      if (prodList.isNotEmpty) {
+        final prod = prodList.first;
+        if (prod.stock <= 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Cannot generate bill: "${prod.productName}" has NO stock remaining (0).'),
+              backgroundColor: Colors.red.shade700,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+          return;
+        }
+        if (item.quantity > prod.stock) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Cannot generate bill: "${prod.productName}" quantity (${item.quantity.toInt()} ${prod.unit ?? "pcs"}) exceeds available stock (${prod.stock} ${prod.unit ?? "pcs"}).'),
+              backgroundColor: Colors.red.shade700,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+          return;
+        }
+      }
     }
 
     setState(() => _isProcessing = true);
@@ -204,9 +336,15 @@ class _BillingScreenState extends State<BillingScreen> {
           customerGst = _walkInGstController.text.trim();
         }
 
-        if (_saveCustomerForFuture && customerName.isNotEmpty && customerName != 'Walk-in Customer') {
+        // Issue 2 Fix: Save Walking Customer data permanently to Database
+        final bool hasCustomInfo = customerName != 'Walk-in Customer' ||
+            (customerPhone != 'N/A' && customerPhone.isNotEmpty) ||
+            (customerAddress != 'N/A' && customerAddress.isNotEmpty) ||
+            (customerGst != null && customerGst.isNotEmpty);
+
+        if (_saveCustomerForFuture || hasCustomInfo) {
           final newCust = Customer(
-            customerName: customerName,
+            customerName: customerName.isNotEmpty ? customerName : 'Walk-in Customer',
             phone: customerPhone != 'N/A' ? customerPhone : null,
             address: customerAddress != 'N/A' ? customerAddress : null,
             gstNumber: customerGst,
@@ -222,6 +360,9 @@ class _BillingScreenState extends State<BillingScreen> {
         invoiceNo: invNo,
         customerId: customerId,
         customerName: customerName,
+        customerPhone: customerPhone,
+        customerAddress: customerAddress,
+        customerGst: customerGst,
         date: dateStr,
         subtotal: _subtotal,
         discount: 0.0,
@@ -229,6 +370,9 @@ class _BillingScreenState extends State<BillingScreen> {
         grandTotal: _grandTotal,
         paymentMethod: _paymentMethod,
         gstRate: _selectedGstRate,
+        taxableAmount: _taxableAmount,
+        cgstAmount: _cgstAmount,
+        sgstAmount: _sgstAmount,
       );
 
       final saleId = await _dbHelper.insertSale(sale, _cart);
@@ -244,13 +388,6 @@ class _BillingScreenState extends State<BillingScreen> {
       );
 
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sale processed successfully! Opening print window...'),
-          backgroundColor: Colors.green,
-        ),
-      );
 
       await InvoiceGenerator.generateAndSaveInvoice(
         sale: sale,
@@ -289,6 +426,16 @@ class _BillingScreenState extends State<BillingScreen> {
         _saveCustomerForFuture = false;
       });
 
+      if (mounted) {
+        try {
+          context.read<ProductProvider>().loadProducts();
+          context.read<SalesProvider>().loadSales();
+          context.read<CustomerProvider>().loadCustomers();
+          context.read<InvoiceReportsProvider>().loadData();
+          context.read<SalesAnalysisProvider>().loadData();
+        } catch (_) {}
+      }
+
       widget.onSaleCompleted?.call();
     } catch (e) {
       if (!mounted) return;
@@ -317,7 +464,19 @@ class _BillingScreenState extends State<BillingScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Create Invoice / Billing', style: TextStyle(fontWeight: FontWeight.bold)),
+            title: Row(
+              children: [
+                Image.asset(
+                  'assets/images/sk_logo.png',
+                  height: 32,
+                  width: 32,
+                  fit: BoxFit.contain,
+                  errorBuilder: (ctx, err, stack) => const Icon(Icons.receipt_long, color: Color(0xFF00875A), size: 28),
+                ),
+                const SizedBox(width: 10),
+                const Text('Create Invoice / Billing', style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
             elevation: 0,
           ),
           body: Row(
@@ -546,12 +705,18 @@ class _BillingScreenState extends State<BillingScreen> {
                                                 (p.barcode ?? '').toLowerCase() == query ||
                                                 p.productName.toLowerCase() == query).toList();
                                             if (matches.isNotEmpty) {
-                                              setState(() => _selectedProduct = matches.first);
+                                              setState(() {
+                                                _selectedProduct = matches.first;
+                                                _updateAddQtyAndPrice(_selectedProduct);
+                                              });
                                             } else if (_selectedProduct != null) {
                                               final selCode = _selectedProduct!.codeOrId.toLowerCase();
                                               final selName = _selectedProduct!.productName.toLowerCase();
                                               if (!query.contains(selCode) && !query.contains(selName)) {
-                                                setState(() => _selectedProduct = null);
+                                                setState(() {
+                                                  _selectedProduct = null;
+                                                  _updateAddQtyAndPrice(null);
+                                                });
                                               }
                                             }
                                           },
@@ -583,6 +748,7 @@ class _BillingScreenState extends State<BillingScreen> {
                                                 );
                                                 setState(() {
                                                   _selectedProduct = exactMatch;
+                                                  _updateAddQtyAndPrice(exactMatch);
                                                   controller.text = exactMatch.codeOrId.isNotEmpty
                                                       ? '${exactMatch.productName} (${exactMatch.codeOrId})'
                                                       : exactMatch.productName;
@@ -602,14 +768,17 @@ class _BillingScreenState extends State<BillingScreen> {
                                             color: isDark ? const Color(0xFF1C382B) : Colors.white,
                                             borderRadius: BorderRadius.circular(8),
                                             child: Container(
-                                              width: 480,
-                                              constraints: const BoxConstraints(maxHeight: 280),
+                                              constraints: BoxConstraints(
+                                                maxWidth: MediaQuery.of(context).size.width * 0.55,
+                                                maxHeight: 280,
+                                              ),
                                               child: ListView.builder(
                                                 padding: EdgeInsets.zero,
                                                 shrinkWrap: true,
                                                 itemCount: options.length,
                                                 itemBuilder: (BuildContext context, int index) {
                                                   final Product option = options.elementAt(index);
+                                                  final isOut = option.stock <= 0;
                                                   final isLow = option.stock <= option.minimumStock;
                                                   final codeStr = (option.barcode != null && option.barcode!.isNotEmpty)
                                                       ? option.barcode!
@@ -627,15 +796,25 @@ class _BillingScreenState extends State<BillingScreen> {
                                                       'Code: $codeStr | Stock: ${option.stock} ${option.unit ?? "pcs"} | Price: ₹${option.sellingPrice}',
                                                       style: TextStyle(color: isDark ? Colors.white70 : Colors.grey.shade600, fontSize: 11),
                                                     ),
-                                                    trailing: isLow
+                                                    trailing: isOut
                                                         ? const Chip(
-                                                            label: Text('Low Stock', style: TextStyle(color: Colors.white, fontSize: 9)),
-                                                            backgroundColor: Colors.orange,
+                                                            label: Text('NO STOCK (0)', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                                                            backgroundColor: Colors.red,
+                                                            visualDensity: VisualDensity.compact,
                                                           )
-                                                        : null,
+                                                        : (isLow
+                                                            ? Chip(
+                                                                label: Text('LOW STOCK (${option.stock})', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                                                                backgroundColor: Colors.orange,
+                                                                visualDensity: VisualDensity.compact,
+                                                              )
+                                                            : null),
                                                     onTap: () {
                                                       onSelected(option);
-                                                      setState(() => _selectedProduct = option);
+                                                      setState(() {
+                                                        _selectedProduct = option;
+                                                        _updateAddQtyAndPrice(option);
+                                                      });
                                                     },
                                                   );
                                                 },
@@ -647,8 +826,38 @@ class _BillingScreenState extends State<BillingScreen> {
                                       onSelected: (Product selection) {
                                         setState(() {
                                           _selectedProduct = selection;
+                                          _updateAddQtyAndPrice(selection);
                                         });
                                       },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  SizedBox(
+                                    width: 95,
+                                    child: TextField(
+                                      controller: _addQtyController,
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      decoration: InputDecoration(
+                                        labelText: _selectedProduct?.unit == 'g' ? 'Qty (g)' : 'Qty (${_selectedProduct?.unit ?? "pcs"})',
+                                        isDense: true,
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                      ),
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                      onChanged: (_) => _onAddQtyChanged(),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  SizedBox(
+                                    width: 95,
+                                    child: TextField(
+                                      controller: _addPriceController,
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      decoration: const InputDecoration(
+                                        labelText: 'Price (₹)',
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                      ),
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF00875A)),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
@@ -707,54 +916,62 @@ class _BillingScreenState extends State<BillingScreen> {
                               const SizedBox(height: 8),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Text('Invoice GST %:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: isDark ? Colors.white : Colors.black87)),
-                                  Row(
-                                    children: [
-                                      ...[0.0, 5.0, 12.0, 18.0, 28.0].map((rate) {
-                                        final isSelected = _selectedGstRate == rate;
-                                        return Padding(
-                                          padding: const EdgeInsets.only(right: 4),
-                                          child: ChoiceChip(
-                                            visualDensity: VisualDensity.compact,
-                                            label: Text('${rate.toStringAsFixed(0)}%'),
-                                            selected: isSelected,
-                                            selectedColor: const Color(0xFF00875A),
-                                            backgroundColor: isDark ? const Color(0xFF1C382B) : Colors.grey.shade200,
-                                            labelStyle: TextStyle(
-                                              color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Wrap(
+                                        alignment: WrapAlignment.end,
+                                        crossAxisAlignment: WrapCrossAlignment.center,
+                                        spacing: 4,
+                                        runSpacing: 4,
+                                        children: [
+                                          ...[0.0, 5.0, 12.0, 18.0, 28.0].map((rate) {
+                                            final isSelected = _selectedGstRate == rate;
+                                            return ChoiceChip(
+                                              visualDensity: VisualDensity.compact,
+                                              label: Text('${rate.toStringAsFixed(0)}%'),
+                                              selected: isSelected,
+                                              selectedColor: const Color(0xFF00875A),
+                                              backgroundColor: isDark ? const Color(0xFF1C382B) : Colors.grey.shade200,
+                                              labelStyle: TextStyle(
+                                                color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              onSelected: (_) {
+                                                setState(() {
+                                                  _selectedGstRate = rate;
+                                                  _gstRateController.text = rate.toStringAsFixed(rate == rate.roundToDouble() ? 0 : 1);
+                                                });
+                                              },
+                                            );
+                                          }),
+                                          SizedBox(
+                                            width: 55,
+                                            child: TextField(
+                                              controller: _gstRateController,
+                                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                              decoration: const InputDecoration(
+                                                isDense: true,
+                                                suffixText: '%',
+                                                contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                              ),
+                                              style: const TextStyle(fontSize: 11),
+                                              onChanged: (val) {
+                                                final parsed = double.tryParse(val) ?? 0.0;
+                                                setState(() {
+                                                  _selectedGstRate = parsed.clamp(0.0, 100.0);
+                                                });
+                                              },
                                             ),
-                                            onSelected: (_) {
-                                              setState(() {
-                                                _selectedGstRate = rate;
-                                                _gstRateController.text = rate.toStringAsFixed(rate == rate.roundToDouble() ? 0 : 1);
-                                              });
-                                            },
                                           ),
-                                        );
-                                      }),
-                                      SizedBox(
-                                        width: 55,
-                                        child: TextField(
-                                          controller: _gstRateController,
-                                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                          decoration: const InputDecoration(
-                                            isDense: true,
-                                            suffixText: '%',
-                                            contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                          ),
-                                          style: const TextStyle(fontSize: 11),
-                                          onChanged: (val) {
-                                            final parsed = double.tryParse(val) ?? 0.0;
-                                            setState(() {
-                                              _selectedGstRate = parsed.clamp(0.0, 100.0);
-                                            });
-                                          },
-                                        ),
+                                        ],
                                       ),
-                                    ],
+                                    ),
                                   ),
                                 ],
                               ),
@@ -923,6 +1140,7 @@ class _BillingScreenState extends State<BillingScreen> {
                                     item: item,
                                     productName: productName,
                                     productUnit: productUnit,
+                                    maxStock: prodObj?.stock,
                                     isDark: isDark,
                                     onChanged: (newPrice, newQty) {
                                       setState(() {
@@ -957,6 +1175,7 @@ class _CartItemTile extends StatefulWidget {
   final SaleItem item;
   final String productName;
   final String productUnit;
+  final int? maxStock;
   final bool isDark;
   final Function(double newPrice, double newQty) onChanged;
   final VoidCallback onDelete;
@@ -966,6 +1185,7 @@ class _CartItemTile extends StatefulWidget {
     required this.item,
     required this.productName,
     required this.productUnit,
+    this.maxStock,
     required this.isDark,
     required this.onChanged,
     required this.onDelete,
@@ -1007,6 +1227,18 @@ class _CartItemTileState extends State<_CartItemTile> {
   void _onPriceOrQtyChanged() {
     double price = double.tryParse(_priceController.text) ?? widget.item.price;
     double qty = double.tryParse(_qtyController.text) ?? widget.item.quantity;
+
+    if (widget.maxStock != null && qty > widget.maxStock!) {
+      qty = widget.maxStock!.toDouble();
+      _qtyController.text = qty.toInt().toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Quantity for "${widget.productName}" capped at max available stock (${widget.maxStock} ${widget.productUnit}).'),
+          backgroundColor: Colors.orange.shade800,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
 
     widget.onChanged(price, qty);
   }
@@ -1053,17 +1285,17 @@ class _CartItemTileState extends State<_CartItemTile> {
           ),
           const SizedBox(height: 6),
 
-          // Row 2: Inline Inputs for Qty (g) and Price (₹) - INCREASED BOX SIZE & PADDING
+          // Row 2: Inline Inputs for Qty (unit) and Price (₹)
           Row(
             children: [
-              // Qty (Grams)
+              // Qty (dynamic unit)
               Expanded(
                 child: TextField(
                   controller: _qtyController,
-                  decoration: const InputDecoration(
-                    labelText: 'Qty (g)',
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'Qty (${widget.productUnit})',
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    border: const OutlineInputBorder(),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),

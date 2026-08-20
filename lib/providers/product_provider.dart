@@ -37,9 +37,11 @@ class ProductProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadProducts() async {
-    _isLoading = true;
-    notifyListeners();
+  Future<void> loadProducts({bool showLoading = true}) async {
+    if (showLoading && _products.isEmpty) {
+      _isLoading = true;
+      notifyListeners();
+    }
     _products = await DatabaseHelper.instance.getProducts();
     _isLoading = false;
     notifyListeners();
@@ -47,21 +49,21 @@ class ProductProvider with ChangeNotifier {
 
   Future<void> addProduct(Product product) async {
     await DatabaseHelper.instance.insertProduct(product);
-    await loadProducts();
+    await loadProducts(showLoading: false);
   }
 
   Future<void> updateProduct(Product product) async {
     await DatabaseHelper.instance.updateProduct(product);
-    await loadProducts();
+    await loadProducts(showLoading: false);
   }
 
   Future<void> deleteProduct(int productId) async {
     await DatabaseHelper.instance.deleteProduct(productId);
-    await loadProducts();
+    await loadProducts(showLoading: false);
   }
 
   Future<void> updateStock(int productId, int quantityChange) async {
     await DatabaseHelper.instance.updateStock(productId, quantityChange);
-    await loadProducts();
+    await loadProducts(showLoading: false);
   }
 }

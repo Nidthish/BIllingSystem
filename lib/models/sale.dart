@@ -3,6 +3,9 @@ class Sale {
   final String invoiceNo;
   final int? customerId;
   final String? customerName;
+  final String? customerPhone;
+  final String? customerAddress;
+  final String? customerGst;
   final String date;
   final double subtotal;
   final double discount;
@@ -21,6 +24,9 @@ class Sale {
     required this.invoiceNo,
     this.customerId,
     this.customerName,
+    this.customerPhone,
+    this.customerAddress,
+    this.customerGst,
     required this.date,
     required this.subtotal,
     required this.discount,
@@ -62,6 +68,9 @@ class Sale {
       invoiceNo: map['invoice_no'] ?? '',
       customerId: (map['customer_id'] as num?)?.toInt(),
       customerName: map['customer_name'],
+      customerPhone: map['customer_phone'],
+      customerAddress: map['customer_address'],
+      customerGst: map['customer_gst'],
       date: map['date'] ?? '',
       subtotal: subtotal,
       discount: discount,
@@ -82,6 +91,9 @@ class Sale {
       'invoice_no': invoiceNo,
       'customer_id': customerId,
       'customer_name': customerName,
+      'customer_phone': customerPhone,
+      'customer_address': customerAddress,
+      'customer_gst': customerGst,
       'date': date,
       'subtotal': subtotal,
       'discount': discount,

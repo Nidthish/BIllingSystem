@@ -18,6 +18,7 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       brightness: Brightness.light,
+      visualDensity: VisualDensity.compact,
       primaryColor: primaryColor,
       scaffoldBackgroundColor: backgroundColor,
       colorScheme: ColorScheme.fromSeed(
@@ -78,6 +79,7 @@ class AppTheme {
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
+      visualDensity: VisualDensity.compact,
       primaryColor: primaryColor,
       scaffoldBackgroundColor: darkBackgroundColor,
       canvasColor: darkCardColor,

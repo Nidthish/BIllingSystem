@@ -23,15 +23,21 @@ class ReportsScreen extends StatelessWidget {
           titleSpacing: 24,
           title: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF00875A), Color(0xFF10B981)],
+              Image.asset(
+                'assets/images/sk_logo.png',
+                height: 32,
+                width: 32,
+                fit: BoxFit.contain,
+                errorBuilder: (ctx, err, stack) => Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF00875A), Color(0xFF10B981)],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  borderRadius: BorderRadius.circular(10),
+                  child: const Icon(Icons.bar_chart, color: Colors.white, size: 20),
                 ),
-                child: const Icon(Icons.bar_chart, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               Text(

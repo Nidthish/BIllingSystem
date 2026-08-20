@@ -237,6 +237,11 @@ class CustomersScreen extends StatelessWidget {
                             child: ConstrainedBox(
                               constraints: BoxConstraints(minWidth: constraints.maxWidth),
                               child: DataTable(
+                                columnSpacing: 16,
+                                horizontalMargin: 12,
+                                dataRowMinHeight: 38,
+                                dataRowMaxHeight: 44,
+                                headingRowHeight: 40,
                                 columns: const [
                                   DataColumn(label: Text('Customer Name')),
                                   DataColumn(label: Text('Phone')),

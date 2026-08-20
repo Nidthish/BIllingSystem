@@ -9,8 +9,28 @@ import '../../models/settings.dart';
 import '../../utils/reports_pdf_generator.dart';
 import '../../widgets/print_options_dialog.dart';
 
-class ProductsScreen extends StatelessWidget {
+class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});
+
+  @override
+  State<ProductsScreen> createState() => _ProductsScreenState();
+}
+
+class _ProductsScreenState extends State<ProductsScreen> {
+  late TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialQuery = context.read<ProductProvider>().searchQuery;
+    _searchController = TextEditingController(text: initialQuery);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   void _showProductDialog(BuildContext parentContext, {Product? product}) {
     final nameController = TextEditingController(text: product?.productName ?? '');
@@ -289,7 +309,19 @@ class ProductsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Products Management'),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/images/sk_logo.png',
+              height: 32,
+              width: 32,
+              fit: BoxFit.contain,
+              errorBuilder: (ctx, err, stack) => const Icon(Icons.store, color: Color(0xFF00875A), size: 28),
+            ),
+            const SizedBox(width: 10),
+            const Text('Products Management'),
+          ],
+        ),
         actions: [
           // ── Print Product List (Print Dialog + Auto-Save) ──────────────
           Consumer2<ProductProvider, CategoryProvider>(
@@ -409,6 +441,7 @@ class ProductsScreen extends StatelessWidget {
               builder: (context, constraints) {
                 final isNarrow = constraints.maxWidth < 600;
                 final searchField = TextField(
+                  controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Search products by name or barcode...',
                     prefixIcon: const Icon(Icons.search),
@@ -478,15 +511,20 @@ class ProductsScreen extends StatelessWidget {
                             child: ConstrainedBox(
                               constraints: BoxConstraints(minWidth: constraints.maxWidth),
                               child: DataTable(
+                                columnSpacing: 14,
+                                horizontalMargin: 12,
+                                dataRowMinHeight: 38,
+                                dataRowMaxHeight: 44,
+                                headingRowHeight: 40,
                                 columns: const [
                                   DataColumn(label: Text('Code / ID')),
                                   DataColumn(label: Text('Product Name')),
+                                  DataColumn(label: Text('Edit / Delete')),
                                   DataColumn(label: Text('Category')),
                                   DataColumn(label: Text('Stock')),
                                   DataColumn(label: Text('Min Stock')),
                                   DataColumn(label: Text('Buy Price')),
                                   DataColumn(label: Text('Sell Price')),
-                                  DataColumn(label: Text('Actions')),
                                 ],
                                 rows: products.map((product) {
                                   final isLowStock = product.stock <= product.minimumStock;
@@ -502,6 +540,38 @@ class ProductsScreen extends StatelessWidget {
                                     cells: [
                                       DataCell(Text(codeStr, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF00875A)))),
                                       DataCell(Text(product.productName, style: const TextStyle(fontWeight: FontWeight.bold))),
+                                      DataCell(
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.blue.shade700,
+                                                foregroundColor: Colors.white,
+                                                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 15),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                                minimumSize: Size.zero,
+                                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                              ),
+                                              onPressed: () => _showProductDialog(context, product: product),
+                                              child: const Text('Edit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.red.shade700,
+                                                foregroundColor: Colors.white,
+                                                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 15),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                                minimumSize: Size.zero,
+                                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                              ),
+                                              onPressed: () => _confirmDelete(context, product),
+                                              child: const Text('Delete', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                       DataCell(Chip(label: Text(categoryName, style: const TextStyle(fontSize: 12)))),
                                       DataCell(
                                         Row(
@@ -520,20 +590,6 @@ class ProductsScreen extends StatelessWidget {
                                       DataCell(Text('${product.minimumStock}')),
                                       DataCell(Text('₹${product.purchasePrice.toStringAsFixed(2)}')),
                                       DataCell(Text('₹${product.sellingPrice.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold))),
-                                      DataCell(
-                                        Row(
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.edit, color: Colors.blue),
-                                              onPressed: () => _showProductDialog(context, product: product),
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.delete, color: Colors.red),
-                                              onPressed: () => _confirmDelete(context, product),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
                                     ],
                                   );
                                 }).toList(),

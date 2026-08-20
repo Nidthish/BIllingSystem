@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import '../../providers/invoice_reports_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/product_provider.dart';
+import '../../providers/sales_provider.dart';
+import '../../providers/sales_analysis_provider.dart';
 import '../../utils/invoice_generator.dart';
 import '../../utils/reports_pdf_generator.dart';
 import '../../utils/reports_excel_generator.dart';
@@ -49,10 +51,11 @@ class _InvoiceReportsTabState extends State<InvoiceReportsTab> {
     try {
       final provider = context.read<InvoiceReportsProvider>();
       final settings = context.read<SettingsProvider>().settings ?? Settings(
-        shopName: 'SK Masala',
-        address: '15 Market Street, Coimbatore, TN 641001',
-        phone: '0422-2345678',
-        gstNumber: '33ABCDE1234F1Z5',
+        shopName: 'MS TRADERS',
+        address: 'No.144A, Mariyam Fathima Building, E.B.Road, Trichy',
+        phone: '7708906866',
+        gstNumber: '33CXGPS6190A1ZI',
+        fssaiNumber: '22421591000206',
         invoicePrefix: 'INV',
       );
 
@@ -70,8 +73,9 @@ class _InvoiceReportsTabState extends State<InvoiceReportsTab> {
         sale: sale,
         items: items,
         customerName: sale.customerName ?? 'Walk-in Customer',
-        customerPhone: '',
-        customerAddress: '',
+        customerPhone: sale.customerPhone ?? 'N/A',
+        customerAddress: sale.customerAddress ?? 'N/A',
+        customerGst: sale.customerGst,
         settings: settings,
         allProducts: products,
       );
@@ -113,6 +117,11 @@ class _InvoiceReportsTabState extends State<InvoiceReportsTab> {
               if (ctx.mounted && Navigator.canPop(ctx)) Navigator.pop(ctx);
               await context.read<InvoiceReportsProvider>().deleteSale(sale.saleId!);
               if (mounted) {
+                try {
+                  context.read<SalesProvider>().loadSales();
+                  context.read<ProductProvider>().loadProducts();
+                  context.read<SalesAnalysisProvider>().loadData();
+                } catch (_) {}
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Invoice ${sale.invoiceNo} deleted.')),
                 );

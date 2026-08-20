@@ -20,7 +20,7 @@ class PrintOptionsDialog {
     required Settings settings,
     required List<Product> allProducts,
   }) {
-    String selectedPaperFormat = 'A4';
+    String selectedPaperFormat = 'A5';
 
     showDialog(
       context: parentContext,
@@ -69,22 +69,22 @@ class PrintOptionsDialog {
                     child: Column(
                       children: [
                         RadioListTile<String>(
-                          value: 'A4',
+                          value: 'A5',
                           groupValue: selectedPaperFormat,
                           activeColor: const Color(0xFF00875A),
-                          title: const Text('A4 Paper Format (Default - Standard Sheet)', style: TextStyle(fontWeight: FontWeight.w600)),
-                          subtitle: const Text('Full A4 sheet (210 x 297 mm)'),
+                          title: const Text('A5 Paper Sheet (Default - HP LaserJet Pro P1566)', style: TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle: const Text('Scaled A5 portrait sheet (148 x 210 mm)'),
                           onChanged: (val) {
                             if (val != null) setDialogState(() => selectedPaperFormat = val);
                           },
                         ),
                         const Divider(height: 1, indent: 16, endIndent: 16),
                         RadioListTile<String>(
-                          value: 'A5',
+                          value: 'A4',
                           groupValue: selectedPaperFormat,
                           activeColor: const Color(0xFF00875A),
-                          title: const Text('A5 Paper Format (Compact Sheet)', style: TextStyle(fontWeight: FontWeight.w600)),
-                          subtitle: const Text('Half A4 sheet (148 x 210 mm)'),
+                          title: const Text('A4 Paper Sheet (Standard Sheet)', style: TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle: const Text('Full A4 sheet (210 x 297 mm)'),
                           onChanged: (val) {
                             if (val != null) setDialogState(() => selectedPaperFormat = val);
                           },
@@ -97,20 +97,50 @@ class PrintOptionsDialog {
               actions: [
                 OutlinedButton.icon(
                   icon: const Icon(Icons.close),
-                  label: const Text('Close (No Hard Copy)'),
+                  label: const Text('Close'),
                   onPressed: () {
                     if (dialogCtx.mounted && Navigator.canPop(dialogCtx)) {
                       Navigator.pop(dialogCtx);
                     }
                   },
                 ),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.preview_outlined),
+                  label: const Text('System Print Dialog'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF00875A),
+                    side: const BorderSide(color: Color(0xFF00875A)),
+                  ),
+                  onPressed: () async {
+                    if (dialogCtx.mounted && Navigator.canPop(dialogCtx)) {
+                      Navigator.pop(dialogCtx);
+                    }
+                    final format = selectedPaperFormat == 'A5' ? PdfPageFormat.a5 : PdfPageFormat.a4;
+                    final pdfBytes = await InvoiceGenerator.buildInvoicePdfBytes(
+                      sale: sale,
+                      items: items,
+                      customerName: customerName,
+                      customerPhone: customerPhone,
+                      customerAddress: customerAddress,
+                      customerGst: customerGst,
+                      settings: settings,
+                      allProducts: allProducts,
+                      pageFormat: format,
+                    );
+                    await InvoiceGenerator.printInvoiceBytes(
+                      pdfBytes: pdfBytes,
+                      invoiceNo: sale.invoiceNo,
+                      format: format,
+                    );
+                  },
+                ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.print),
-                  label: const Text('Print Invoice'),
+                  label: const Text('Direct Print'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00875A),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                   onPressed: () async {
                     if (dialogCtx.mounted && Navigator.canPop(dialogCtx)) {
@@ -135,6 +165,7 @@ class PrintOptionsDialog {
                       printed = await InvoiceGenerator.directPrintInvoiceBytes(
                         pdfBytes: pdfBytes,
                         invoiceNo: sale.invoiceNo,
+                        format: format,
                       );
                     } catch (e) {
                       debugPrint('Print error: $e');
@@ -149,12 +180,11 @@ class PrintOptionsDialog {
                           ),
                         );
                       } else {
-                        ScaffoldMessenger.of(parentContext).showSnackBar(
-                          const SnackBar(
-                            content: Text('Invoice saved in "Invoices" folder! Connect a paper printer to print hard copies.'),
-                            backgroundColor: Color(0xFF00875A),
-                            duration: Duration(seconds: 4),
-                          ),
+                        // Fallback to layoutPdf if direct silent print was not completed
+                        await InvoiceGenerator.printInvoiceBytes(
+                          pdfBytes: pdfBytes,
+                          invoiceNo: sale.invoiceNo,
+                          format: format,
                         );
                       }
                     }

@@ -59,6 +59,9 @@ class DatabaseHelper {
 
     // Migration helper: Ensure GST, barcode & bank detail columns exist
     try { await db.execute('ALTER TABLE products ADD COLUMN barcode TEXT;'); } catch (_) {}
+    try { await db.execute('ALTER TABLE sales ADD COLUMN customer_phone TEXT;'); } catch (_) {}
+    try { await db.execute('ALTER TABLE sales ADD COLUMN customer_address TEXT;'); } catch (_) {}
+    try { await db.execute('ALTER TABLE sales ADD COLUMN customer_gst TEXT;'); } catch (_) {}
     try { await db.execute('ALTER TABLE sales ADD COLUMN gst_rate REAL DEFAULT 0;'); } catch (_) {}
     try { await db.execute('ALTER TABLE sales ADD COLUMN cgst_rate REAL DEFAULT 0;'); } catch (_) {}
     try { await db.execute('ALTER TABLE sales ADD COLUMN sgst_rate REAL DEFAULT 0;'); } catch (_) {}
@@ -72,19 +75,15 @@ class DatabaseHelper {
     try { await db.execute('ALTER TABLE settings ADD COLUMN account_type TEXT;'); } catch (_) {}
     try { await db.execute('ALTER TABLE settings ADD COLUMN fssai_number TEXT;'); } catch (_) {}
 
-    // Wipe old sample data if present and populate new 143 SK Masala catalog
+    // Populate catalog only if database is completely empty
     try {
       final catalogCheck = await db.rawQuery("SELECT COUNT(*) as count FROM products");
       final count = (catalogCheck.first.values.first as num?)?.toInt() ?? 0;
-      if (count != 143) {
-        await db.execute('DELETE FROM sale_items;');
-        await db.execute('DELETE FROM sales;');
-        await db.execute('DELETE FROM products;');
-        await db.execute('DELETE FROM categories;');
+      if (count == 0) {
         await _executeBatchScript(db, initialSqlScript);
       }
     } catch (e) {
-      await _executeBatchScript(db, initialSqlScript);
+      // Ignore if already populated
     }
 
     // Auto-migrate historical sales records
@@ -348,11 +347,8 @@ class DatabaseHelper {
         itemMap['sale_id'] = saleId;
         await txn.insert('sale_items', itemMap);
         
-        // Fetch unit to calculate correct stock deduction (grams to kg conversion)
-        final prodRows = await txn.query('products', columns: ['unit'], where: 'product_id = ?', whereArgs: [item.productId]);
-        final unitStr = prodRows.isNotEmpty ? (prodRows.first['unit'] as String? ?? '').toLowerCase() : '';
-        final isPcs = unitStr == 'pcs' || unitStr == 'piece' || unitStr == 'pieces' || unitStr == 'pkt' || unitStr == 'nos' || unitStr == 'bottle' || unitStr == 'box';
-        final stockDeduction = isPcs ? item.quantity : (item.quantity / 1000.0);
+        // Deduct stock directly by item quantity
+        final stockDeduction = item.quantity;
 
         // Decrease stock (safely capped at 0 minimum)
         await txn.rawUpdate(
@@ -375,10 +371,7 @@ class DatabaseHelper {
       );
       for (var row in itemsResult) {
         final item = SaleItem.fromMap(row);
-        final prodRows = await txn.query('products', columns: ['unit'], where: 'product_id = ?', whereArgs: [item.productId]);
-        final unitStr = prodRows.isNotEmpty ? (prodRows.first['unit'] as String? ?? '').toLowerCase() : '';
-        final isPcs = unitStr == 'pcs' || unitStr == 'piece' || unitStr == 'pieces';
-        final stockRestoration = isPcs ? item.quantity : (item.quantity / 1000.0);
+        final stockRestoration = item.quantity;
 
         await txn.rawUpdate(
           'UPDATE products SET stock = stock + ? WHERE product_id = ?',
@@ -407,6 +400,15 @@ class DatabaseHelper {
     return result.map((json) => SaleItem.fromMap(json)).toList();
   }
 
+  Future<void> clearAllSalesAndResetStock() async {
+    final db = await instance.database;
+    await db.transaction((txn) async {
+      await txn.execute('DELETE FROM sale_items;');
+      await txn.execute('DELETE FROM sales;');
+      await txn.execute('UPDATE products SET stock = 0;');
+    });
+  }
+
   Future<void> resetToOfficialCatalog() async {
     final db = await instance.database;
     await db.execute('DELETE FROM sale_items;');
@@ -414,5 +416,6 @@ class DatabaseHelper {
     await db.execute('DELETE FROM products;');
     await db.execute('DELETE FROM categories;');
     await _executeBatchScript(db, initialSqlScript);
+    await db.execute('UPDATE products SET stock = 0;');
   }
 }
