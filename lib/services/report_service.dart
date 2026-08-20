@@ -113,7 +113,9 @@ class ReportService {
             ? categoryMap[product.categoryId]
             : null;
 
-        final purchaseCost = product.purchasePrice * item.quantity;
+        final purchaseCost = product.unit == 'g'
+            ? (item.quantity / 1000.0) * product.purchasePrice
+            : item.quantity * product.purchasePrice;
         final saleAmount = item.total;
         
         // Product item inherits GST proportion from invoice

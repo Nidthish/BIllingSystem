@@ -41,8 +41,6 @@ class _BillingScreenState extends State<BillingScreen> {
   Product? _selectedProduct;
   final TextEditingController _productSearchController = TextEditingController();
   final FocusNode _productSearchFocusNode = FocusNode();
-  final TextEditingController _addQtyController = TextEditingController();
-  final TextEditingController _addPriceController = TextEditingController();
 
   // Cart & Calculation State
   final List<SaleItem> _cart = [];
@@ -65,36 +63,8 @@ class _BillingScreenState extends State<BillingScreen> {
     _walkInGstController.dispose();
     _productSearchController.dispose();
     _productSearchFocusNode.dispose();
-    _addQtyController.dispose();
-    _addPriceController.dispose();
     _gstRateController.dispose();
     super.dispose();
-  }
-
-  // --- PRE-CART QTY & PRICE AUTO-CALCULATION ---
-  void _updateAddQtyAndPrice(Product? prod) {
-    if (prod == null) {
-      _addQtyController.clear();
-      _addPriceController.clear();
-      return;
-    }
-    final defaultQty = prod.unit == 'g' ? 1000.0 : 1.0;
-    _addQtyController.text = defaultQty % 1 == 0 ? defaultQty.toInt().toString() : defaultQty.toStringAsFixed(1);
-
-    final calcPrice = prod.unit == 'g'
-        ? (defaultQty / 1000.0) * prod.sellingPrice
-        : defaultQty * prod.sellingPrice;
-    _addPriceController.text = calcPrice.toStringAsFixed(calcPrice % 1 == 0 ? 0 : 2);
-  }
-
-  void _onAddQtyChanged() {
-    if (_selectedProduct == null) return;
-    final qty = double.tryParse(_addQtyController.text.trim()) ?? 0.0;
-    final prod = _selectedProduct!;
-    final calcPrice = prod.unit == 'g'
-        ? (qty / 1000.0) * prod.sellingPrice
-        : qty * prod.sellingPrice;
-    _addPriceController.text = calcPrice.toStringAsFixed(calcPrice % 1 == 0 ? 0 : 2);
   }
 
   // --- CART MANAGEMENT ---
@@ -160,19 +130,16 @@ class _BillingScreenState extends State<BillingScreen> {
         ),
       );
       _productSearchController.clear();
-      _addQtyController.clear();
-      _addPriceController.clear();
       setState(() {
         _selectedProduct = null;
       });
       return;
     }
 
-    final qtyInput = double.tryParse(_addQtyController.text.trim());
-    final priceInput = double.tryParse(_addPriceController.text.trim());
-
-    final initialQty = qtyInput ?? (prod.unit == 'g' ? 1000.0 : 1.0);
-    final initialPrice = priceInput ?? (prod.unit == 'g' ? (initialQty / 1000.0) * prod.sellingPrice : initialQty * prod.sellingPrice);
+    final initialQty = prod.unit == 'g' ? 1000.0 : 1.0;
+    final initialPrice = prod.unit == 'g'
+        ? (initialQty / 1000.0) * prod.sellingPrice
+        : initialQty * prod.sellingPrice;
 
     final existingIndex = _cart.indexWhere((item) => item.productId == prod.productId);
     final existingQty = existingIndex >= 0 ? _cart[existingIndex].quantity : 0.0;
@@ -217,13 +184,16 @@ class _BillingScreenState extends State<BillingScreen> {
     if (existingIndex >= 0) {
       final existingItem = _cart[existingIndex];
       final newQty = existingItem.quantity + initialQty;
+      final newTotal = prod.unit == 'g'
+          ? (newQty / 1000.0) * existingItem.price
+          : newQty * existingItem.price;
       setState(() {
         _cart[existingIndex] = SaleItem(
           saleId: existingItem.saleId,
           productId: existingItem.productId,
           quantity: newQty,
           price: existingItem.price,
-          total: existingItem.price,
+          total: newTotal,
         );
       });
     } else {
@@ -232,15 +202,13 @@ class _BillingScreenState extends State<BillingScreen> {
           saleId: 0,
           productId: prod.productId!,
           quantity: initialQty,
-          price: initialPrice,
+          price: prod.sellingPrice,
           total: initialPrice,
         ));
       });
     }
 
     _productSearchController.clear();
-    _addQtyController.clear();
-    _addPriceController.clear();
     setState(() {
       _selectedProduct = null;
     });
@@ -658,7 +626,6 @@ class _BillingScreenState extends State<BillingScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Expanded(
-                                    flex: 3,
                                     child: RawAutocomplete<Product>(
                                       textEditingController: _productSearchController,
                                       focusNode: _productSearchFocusNode,
@@ -707,7 +674,6 @@ class _BillingScreenState extends State<BillingScreen> {
                                             if (matches.isNotEmpty) {
                                               setState(() {
                                                 _selectedProduct = matches.first;
-                                                _updateAddQtyAndPrice(_selectedProduct);
                                               });
                                             } else if (_selectedProduct != null) {
                                               final selCode = _selectedProduct!.codeOrId.toLowerCase();
@@ -715,7 +681,6 @@ class _BillingScreenState extends State<BillingScreen> {
                                               if (!query.contains(selCode) && !query.contains(selName)) {
                                                 setState(() {
                                                   _selectedProduct = null;
-                                                  _updateAddQtyAndPrice(null);
                                                 });
                                               }
                                             }
@@ -748,7 +713,6 @@ class _BillingScreenState extends State<BillingScreen> {
                                                 );
                                                 setState(() {
                                                   _selectedProduct = exactMatch;
-                                                  _updateAddQtyAndPrice(exactMatch);
                                                   controller.text = exactMatch.codeOrId.isNotEmpty
                                                       ? '${exactMatch.productName} (${exactMatch.codeOrId})'
                                                       : exactMatch.productName;
@@ -813,7 +777,6 @@ class _BillingScreenState extends State<BillingScreen> {
                                                       onSelected(option);
                                                       setState(() {
                                                         _selectedProduct = option;
-                                                        _updateAddQtyAndPrice(option);
                                                       });
                                                     },
                                                   );
@@ -826,38 +789,8 @@ class _BillingScreenState extends State<BillingScreen> {
                                       onSelected: (Product selection) {
                                         setState(() {
                                           _selectedProduct = selection;
-                                          _updateAddQtyAndPrice(selection);
                                         });
                                       },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  SizedBox(
-                                    width: 95,
-                                    child: TextField(
-                                      controller: _addQtyController,
-                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                      decoration: InputDecoration(
-                                        labelText: _selectedProduct?.unit == 'g' ? 'Qty (g)' : 'Qty (${_selectedProduct?.unit ?? "pcs"})',
-                                        isDense: true,
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                      ),
-                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                                      onChanged: (_) => _onAddQtyChanged(),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  SizedBox(
-                                    width: 95,
-                                    child: TextField(
-                                      controller: _addPriceController,
-                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                      decoration: const InputDecoration(
-                                        labelText: 'Price (₹)',
-                                        isDense: true,
-                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                      ),
-                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF00875A)),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
@@ -1140,16 +1073,17 @@ class _BillingScreenState extends State<BillingScreen> {
                                     item: item,
                                     productName: productName,
                                     productUnit: productUnit,
+                                    sellingPrice: prodObj?.sellingPrice ?? 0.0,
                                     maxStock: prodObj?.stock,
                                     isDark: isDark,
-                                    onChanged: (newPrice, newQty) {
+                                    onChanged: (newRate, newQty, newTotal) {
                                       setState(() {
                                         _cart[index] = SaleItem(
                                           saleId: item.saleId,
                                           productId: item.productId,
                                           quantity: newQty,
-                                          price: newPrice,
-                                          total: newPrice,
+                                          price: newRate,
+                                          total: newTotal,
                                         );
                                       });
                                     },
@@ -1175,9 +1109,10 @@ class _CartItemTile extends StatefulWidget {
   final SaleItem item;
   final String productName;
   final String productUnit;
+  final double sellingPrice;
   final int? maxStock;
   final bool isDark;
-  final Function(double newPrice, double newQty) onChanged;
+  final Function(double newRate, double newQty, double newTotal) onChanged;
   final VoidCallback onDelete;
 
   const _CartItemTile({
@@ -1185,6 +1120,7 @@ class _CartItemTile extends StatefulWidget {
     required this.item,
     required this.productName,
     required this.productUnit,
+    required this.sellingPrice,
     this.maxStock,
     required this.isDark,
     required this.onChanged,
@@ -1196,41 +1132,58 @@ class _CartItemTile extends StatefulWidget {
 }
 
 class _CartItemTileState extends State<_CartItemTile> {
-  late TextEditingController _priceController;
   late TextEditingController _qtyController;
+  late TextEditingController _rateController;
 
   @override
   void initState() {
     super.initState();
-    _priceController = TextEditingController(text: widget.item.price.toStringAsFixed(2));
-    _qtyController = TextEditingController(text: widget.item.quantity.toInt().toString());
+    _qtyController = TextEditingController(
+      text: widget.item.quantity % 1 == 0
+          ? widget.item.quantity.toInt().toString()
+          : widget.item.quantity.toString(),
+    );
+    _rateController = TextEditingController(
+      text: widget.item.price % 1 == 0
+          ? widget.item.price.toInt().toString()
+          : widget.item.price.toStringAsFixed(2),
+    );
   }
 
   @override
   void didUpdateWidget(covariant _CartItemTile oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.item.price != widget.item.price && double.tryParse(_priceController.text) != widget.item.price) {
-      _priceController.text = widget.item.price.toStringAsFixed(2);
+    if (oldWidget.item.quantity != widget.item.quantity &&
+        double.tryParse(_qtyController.text) != widget.item.quantity) {
+      _qtyController.text = widget.item.quantity % 1 == 0
+          ? widget.item.quantity.toInt().toString()
+          : widget.item.quantity.toString();
     }
-    if (oldWidget.item.quantity != widget.item.quantity && double.tryParse(_qtyController.text) != widget.item.quantity) {
-      _qtyController.text = widget.item.quantity.toInt().toString();
+    if (oldWidget.item.price != widget.item.price &&
+        double.tryParse(_rateController.text) != widget.item.price) {
+      _rateController.text = widget.item.price % 1 == 0
+          ? widget.item.price.toInt().toString()
+          : widget.item.price.toStringAsFixed(2);
     }
   }
 
   @override
   void dispose() {
-    _priceController.dispose();
     _qtyController.dispose();
+    _rateController.dispose();
     super.dispose();
   }
 
   void _onPriceOrQtyChanged() {
-    double price = double.tryParse(_priceController.text) ?? widget.item.price;
-    double qty = double.tryParse(_qtyController.text) ?? widget.item.quantity;
+    final qtyText = _qtyController.text.trim();
+    final rateText = _rateController.text.trim();
+
+    double qty = double.tryParse(qtyText) ?? 0.0;
+    double rate = double.tryParse(rateText) ?? 0.0;
 
     if (widget.maxStock != null && qty > widget.maxStock!) {
       qty = widget.maxStock!.toDouble();
-      _qtyController.text = qty.toInt().toString();
+      _qtyController.text = qty % 1 == 0 ? qty.toInt().toString() : qty.toString();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Quantity for "${widget.productName}" capped at max available stock (${widget.maxStock} ${widget.productUnit}).'),
@@ -1240,12 +1193,28 @@ class _CartItemTileState extends State<_CartItemTile> {
       );
     }
 
-    widget.onChanged(price, qty);
+    final double calculatedTotal = widget.productUnit == 'g'
+        ? (qty / 1000.0) * rate
+        : qty * rate;
+
+    setState(() {}); // Updates formula text immediately in the state!
+    widget.onChanged(rate, qty, calculatedTotal);
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = widget.isDark;
+    final qtyText = _qtyController.text.trim();
+    final rateText = _rateController.text.trim();
+    final double qty = double.tryParse(qtyText) ?? 0.0;
+    final double rate = double.tryParse(rateText) ?? 0.0;
+    final double calculatedTotal = widget.productUnit == 'g'
+        ? (qty / 1000.0) * rate
+        : qty * rate;
+
+    final String unitLabel = widget.productUnit == 'g'
+        ? 'kg'
+        : (widget.productUnit.isEmpty ? 'pc' : widget.productUnit);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4.0),
@@ -1285,37 +1254,66 @@ class _CartItemTileState extends State<_CartItemTile> {
           ),
           const SizedBox(height: 6),
 
-          // Row 2: Inline Inputs for Qty (unit) and Price (₹)
+          // Row 2: Qty (modifiable) X Price per unit (modifiable) = Calculated Total
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Qty (dynamic unit)
-              Expanded(
+              // Qty TextField
+              SizedBox(
+                width: 90,
                 child: TextField(
                   controller: _qtyController,
                   decoration: InputDecoration(
                     labelText: 'Qty (${widget.productUnit})',
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     border: const OutlineInputBorder(),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                   onChanged: (_) => _onPriceOrQtyChanged(),
                 ),
               ),
-              const SizedBox(width: 8),
-
-              // Price (₹)
-              Expanded(
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4.0),
+                child: Text(
+                  'X',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+                ),
+              ),
+              // Price per unit / kg TextField
+              SizedBox(
+                width: 100,
                 child: TextField(
-                  controller: _priceController,
-                  decoration: const InputDecoration(
-                    labelText: 'Price (₹)',
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                    border: OutlineInputBorder(),
+                  controller: _rateController,
+                  decoration: InputDecoration(
+                    labelText: 'Price / $unitLabel (₹)',
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    border: const OutlineInputBorder(),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF00875A)),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF00875A)),
                   onChanged: (_) => _onPriceOrQtyChanged(),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4.0),
+                child: Text(
+                  '=',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.grey),
+                ),
+              ),
+              // Calculated Total display
+              Expanded(
+                child: Text(
+                  '₹${calculatedTotal.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF00875A),
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

@@ -76,7 +76,6 @@ class InvoiceGenerator {
     if (_tamilFontBold != null) fallbacks.add(_tamilFontBold!);
 
     final pdf = pw.Document();
-    final productMap = {for (var p in allProducts) p.productId: p.productName};
 
     final isA5 = pageFormat.width <= PdfPageFormat.a5.width + 10;
     final contentPadding = isA5 ? 12.0 : 18.0;
@@ -313,8 +312,12 @@ class InvoiceGenerator {
                   ...items.asMap().entries.map((entry) {
                     final index = entry.key;
                     final item = entry.value;
-                    final pName = productMap[item.productId] ?? 'Item #${item.productId}';
-                    final qtyStr = item.quantity % 1 == 0 ? '${item.quantity.toInt()}g' : '${item.quantity.toStringAsFixed(1)}g';
+                    final prodObj = allProducts.firstWhere((p) => p.productId == item.productId, orElse: () => Product(productName: 'Item', categoryId: 0, purchasePrice: 0.0, sellingPrice: 0.0, stock: 0, minimumStock: 0, gst: 0.0, unit: 'g'));
+                    final pName = prodObj.productName;
+                    final pUnit = prodObj.unit ?? 'g';
+                    final qtyStr = pUnit == 'g'
+                        ? (item.quantity % 1 == 0 ? '${item.quantity.toInt()}g' : '${item.quantity.toStringAsFixed(1)}g')
+                        : (item.quantity % 1 == 0 ? '${item.quantity.toInt()} $pUnit' : '${item.quantity.toStringAsFixed(1)} $pUnit');
                     final rateStr = item.price % 1 == 0 ? item.price.toInt().toString() : item.price.toStringAsFixed(2);
                     final totalStr = 'Rs.${item.total.toStringAsFixed(item.total % 1 == 0 ? 0 : 2)}';
                     final isCompact = items.length > 12 || isA5;

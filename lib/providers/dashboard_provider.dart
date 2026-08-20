@@ -179,7 +179,8 @@ class DashboardProvider with ChangeNotifier {
         if (productList.isNotEmpty) {
           final product = productList.first;
           if (_selectedCategoryId == null || product.categoryId == _selectedCategoryId) {
-            final itemProfit = (item.price - product.purchasePrice) * item.quantity;
+            final qtyFactor = product.unit == 'g' ? (item.quantity / 1000.0) : item.quantity;
+            final itemProfit = (item.price - product.purchasePrice) * qtyFactor;
             totalProfit += itemProfit;
           }
         }
